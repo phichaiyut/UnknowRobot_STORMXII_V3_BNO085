@@ -23,8 +23,6 @@ void setup() {
   TrackLineColor(BLACK);      // สีที่หุ่นยนต์วิ่ง BLACK / WHITE
   SetRobotPID(0.009, 0.12);   // ค่า PID  >> KP, KD //////////////////////////////////////////////////
   SetSensorTrackLine_CH(16);  // จำนวนเซนเซอร์ที่ใช้ตรวจจับเส้น 6 , 8 , 10 , 12 , 14 , 16 CH
-  SetGyroTurn(1.3, 0.8, 65, 20, 15, 1);  // ค่าเลี้ยวด้วย Gyro >> KP, KD, MaxSpd, MinSpd, SmallAngle, StopThr
-  SetGyroRun(0.25, 2.5);                 // ค่าวิ่งตรงด้วย Gyro >> KP, KD
   /////////////////////////////////////////
 
   //////////// SET TURN SPEED /////////////

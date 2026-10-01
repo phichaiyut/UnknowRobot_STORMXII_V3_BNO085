@@ -13,6 +13,23 @@ RobotSetupSpeed();
   set_line_center(1);  // เดินตามเส้น เข้ากลางหุ่น
 
   SetSlowKpKd(0.014, 0.14);
+
+  /******************** GYRO SPEED MODE ********************/
+  // เลือกเปิดใช้ทีละบรรทัด (mode, max, min)
+  // ModeSpdGyro(0, 100, -10);  // 0 = ..max         ล้อติดลบ → min
+  // ModeSpdGyro(1, 100, -100); // 1 = min..max
+  // ModeSpdGyro(2, 100, -10);  // 2 = -Speed..Speed ถอยล้อได้เต็มที่
+  // ModeSpdGyro(3, 100, -10);  // 3 = ..max         ล้อติดลบ → -Speed
+  ModeSpdGyro(4, 100, -5);      // 4 = ..Speed       ล้อติดลบ → min (ใส่ min = 0 คือไม่ถอยล้อ)
+  // ModeSpdGyro(2, 4, 100, -5);  // แยกโหมด (เดินหน้า, ถอยหลัง, max, min)
+
+  /******************** GYRO PID CONFIG ********************/
+  // (kp, kd, maxSpd, minSpd, smallAngle, stopThr)
+  SetGyroTurn(1.3, 0.8, 65, 20, 15.0, 1.0);  // เลี้ยวล้อเดียวด้วยไจโร (turnDegree / turnDegreeB)
+  SetGyroSpin(1.3, 0.8, 65, 20, 15.0, 1.0);  // หมุนตัวอยู่กับที่ด้วยไจโร (spinDegree)
+  // (kp, kd)
+  SetGyroRun(0.25, 2.5);   // เดินหน้าตรงด้วยไจโร (RunG)
+  SetGyroRunB(0.25, 2.5);  // ถอยหลังตรงด้วยไจโร (RunGB)
   //SerialCalibrate_AllSensor(); //โชว์ค่าคาลิเบท เซนเซอร์ทั้งหมด
   //SerialPositionFB();
 }

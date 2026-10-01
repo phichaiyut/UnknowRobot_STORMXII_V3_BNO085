@@ -84,6 +84,10 @@ void SerialShowAllSensorOnce() {
     Serial.print(" ");
   }
 
+  Serial.print("| gyro :");
+  Serial.print(angleRead());
+  Serial.print(" ");
+
   Serial.println();  // ขึ้นบรรทัดใหม่ครั้งเดียว
 }
 
