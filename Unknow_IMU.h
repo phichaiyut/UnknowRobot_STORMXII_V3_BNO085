@@ -1026,17 +1026,6 @@ void resetAngles() {
   previous_errorGB = 0;
 }
 
-void resetAngle() {
-  resetAngles();
-}
-
-// มุมปัจจุบันแบบ -180 ถึง 180
-float gyroZ() {
-  float a = angleRead();
-  if (a > 180) a -= 360;
-  return a;
-}
-
 
 /* ---------- rotate degree (arc: independent left/right cruise speed) ---------- */
 
@@ -1063,7 +1052,7 @@ void rotateDegree(int SpeedL, int SpeedR, int relative_degree, float kp, float k
     Motor(leftPow, rightPow);
     previous_error = error;
   }
-  SetG(10);
+  SetG(max(abs(SpeedL), abs(SpeedR)));
 }
 
 void rotateDegree(int SpeedL, int SpeedR, int relative_degree) {
