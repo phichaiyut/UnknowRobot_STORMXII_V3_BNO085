@@ -673,6 +673,7 @@ void TrackSelectG(int spd, char select) {
     ToFrontG();
     turnDegree(90);
   } else if (select == 'p') {
+    BZon();
     ReadCalibrateF();
     while (1) {
       RunG(spd, spd);
@@ -685,8 +686,10 @@ void TrackSelectG(int spd, char select) {
       ReadCalibrateF();
       if (F[3] < Ref && F[12] < Ref) break;
     }
+    BZoff();
   } else if (select == 'P') {
     ToFrontG();
+    BZon();
     ReadCalibrateF();
     while (1) {
       RunG(spd, spd);
@@ -699,6 +702,7 @@ void TrackSelectG(int spd, char select) {
       ReadCalibrateF();
       if (F[3] < Ref && F[12] < Ref) break;
     }
+    BZoff();
   } else if (select == 'c' || select == 'C') {
     ToCenterG();
   } else if (select == 'b' || select == 'B') {
@@ -709,7 +713,7 @@ void TrackSelectG(int spd, char select) {
       if (B[3] > Ref && B[12] > Ref) break;
     }
   } else if (select == 'g' || select == 'G') {
-    SetG(100);
+    SetG(spd);
   } else {
     Stop(100);
   }
@@ -730,7 +734,8 @@ void TrackSelectGB(int spd, char select) {
     turnDegreeB(90);
   } else if (select == 'e' || select == 'E') {
     turnDegreeB(-90);
-  } else if (select == 'p' || select == 'P') {
+  } else if (select == 'p') {
+    BZon();
     ReadCalibrateB();
     while (1) {
       RunGB(spd, spd);
@@ -743,7 +748,24 @@ void TrackSelectGB(int spd, char select) {
       ReadCalibrateB();
       if (B[3] < Ref && B[12] < Ref) break;
     }
-  } else if (select == 'c') {
+    BZoff();
+  }else if (select == 'P') {
+    BZon();
+    ReadCalibrateB();
+    while (1) {
+      RunGB(spd, spd);
+      ReadCalibrateB();
+      if (B[3] < Ref && B[12] < Ref) break;
+    }
+    BBtimerG(spd, 5);
+    while (1) {
+      RunGB(spd, spd);
+      ReadCalibrateB();
+      if (B[3] < Ref && B[12] < Ref) break;
+    }
+    BZoff();
+  }
+   else if (select == 'c') {
     BackToCenterG();
   } else if (select == 'C') {
     ToFrontG();
@@ -756,7 +778,7 @@ void TrackSelectGB(int spd, char select) {
       if (B[3] > Ref && B[12] > Ref) break;
     }
   } else if (select == 'g' || select == 'G') {
-    SetG(100);
+    SetG(spd);
   } else {
     Stop(100);
   }
@@ -879,7 +901,7 @@ void FFcmG(int Speed, float distance_cm) {
 
   // ถ้าระยะสั้นมาก (< 30) ให้ปรับ speed_scale ได้ง่ายขึ้น
   if (!enableRamp) {
-    speed_scale = 1.7;  // คุณสามารถเปลี่ยนเป็น 0.95, 0.98, 1.0 ได้ตามต้องการ
+    speed_scale = 1.75;  // คุณสามารถเปลี่ยนเป็น 0.95, 0.98, 1.0 ได้ตามต้องการ
   }
   if (!useDirectionG) SetRobotAngle();  // เซ็ตค่าปัจจุบัน
 
@@ -1025,6 +1047,7 @@ void resetAngles() {
   previous_errorG = 0;
   previous_errorGB = 0;
 }
+
 
 
 /* ---------- rotate degree (arc: independent left/right cruise speed) ---------- */
