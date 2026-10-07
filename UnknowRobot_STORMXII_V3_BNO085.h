@@ -45,7 +45,13 @@ void RobotSetup() {
   if (myIMU.begin(0x4A, Wire, -1, -1) == false) {
     Serial.println("BNO08x not detected at default I2C address. Check your jumpers and the hookup guide. Freezing...");
     while (1) {
-      Beep(500); delay(200); Beep(500); delay(200); Beep(500); delay(200); Beep(500);
+      Beep(500);
+      delay(200);
+      Beep(500);
+      delay(200);
+      Beep(500);
+      delay(200);
+      Beep(500);
       break;
     }
   }
