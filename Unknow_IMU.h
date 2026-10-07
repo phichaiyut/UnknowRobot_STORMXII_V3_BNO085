@@ -76,11 +76,22 @@ void resetYaw() {
   yawgyro = 0.0f;
 }
 
+// อ่านมุม 5 ครั้งแล้วหาค่าเฉลี่ย (เทียบกับค่าแรกเพื่อกันปัญหาข้าม ±180)
+float angleReadAvg() {
+  float first = angleRead();
+  float sum = 0;
+  for (int i = 0; i < 5; i++) {
+    sum += wrap180(angleRead() - first);
+    delay(5);
+  }
+  return wrap180(first + sum / 5.0f);
+}
+
 // รีเซ็ตมุมปัจจุบันของหุ่นยนต์ให้เป็น 0 องศา
 void setAngleOffset() {
   //  MotorStop();delay(20);
   resetYaw();
-  current_degree = angleRead();
+  current_degree = angleReadAvg();
   previous_errorG = 0;
   previous_errorGB = 0;
 }
@@ -176,7 +187,7 @@ void SetRobotAngle() {
 
 void resetAngle() {
   resetYaw();
-  current_degree = angleRead();
+  current_degree = angleReadAvg();
   previous_errorG = 0;
   previous_errorGB = 0;
 }
@@ -1110,7 +1121,7 @@ void BBcmG(int Speed, float distance_cm, char select) {
 
 void resetAngles() {
   setAngleOffset();
-  current_degree = angleRead();
+  current_degree = angleReadAvg();
   previous_errorG = 0;
   previous_errorGB = 0;
 }
