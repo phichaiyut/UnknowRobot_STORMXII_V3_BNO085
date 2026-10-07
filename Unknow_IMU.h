@@ -82,6 +82,9 @@ void setAngleOffset() {
   for (int i = 0; i < 10; i++) {
     resetYaw();
   }
+  current_degree = angleRead();
+  previous_errorG = 0;
+  previous_errorGB = 0;
 }
 
 float kpHold = 2.5;
@@ -171,6 +174,13 @@ void SetBG(int totalTime) {
 
 void SetRobotAngle() {
   current_degree = angleRead();
+}
+
+void resetAngle() {
+  for (int i = 0; i < 10; i++) angleRead();
+  current_degree = angleRead();
+  previous_errorG = 0;
+  previous_errorGB = 0;
 }
 
 // ===== ตัวแปรปรับค่าไจโร (ปรับได้ด้วย SetGyroTurn / SetGyroSpin ใน Setting.ino) =====
@@ -1106,7 +1116,6 @@ void resetAngles() {
   previous_errorG = 0;
   previous_errorGB = 0;
 }
-
 
 
 /* ---------- rotate degree (arc: independent left/right cruise speed) ---------- */
