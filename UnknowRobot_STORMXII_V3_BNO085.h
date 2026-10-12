@@ -42,20 +42,28 @@ void RobotSetup() {
 
   Wire.begin();
 
-  if (myIMU.begin(0x4A, Wire, -1, -1) == false) {
-    Serial.println("BNO08x not detected at default I2C address. Check your jumpers and the hookup guide. Freezing...");
-    while (1) {
-      Beep(500);
-      delay(200);
-      Beep(500);
-      delay(200);
-      Beep(500);
-      delay(200);
-      Beep(500);
+  // ลองหา BNO08x ซ้ำได้ไม่เกิน 5 วินาที ถ้าไม่เจอให้ทำงานต่อโดยไม่มี gyro
+  bool imuFound = false;
+  unsigned long imuStart = millis();
+  while (millis() - imuStart < 5000) {
+    if (myIMU.begin(0x4A, Wire, -1, -1)) {
+      imuFound = true;
       break;
     }
+    delay(100);
   }
-  Serial.println("BNO08x found!");
+  if (!imuFound) {
+    Serial.println("BNO08x not detected at default I2C address. Check your jumpers and the hookup guide.");
+    Beep(500);
+    delay(200);
+    Beep(500);
+    delay(200);
+    Beep(500);
+    delay(200);
+    Beep(500);
+  } else {
+    Serial.println("BNO08x found!");
+  }
 
   myIMU.enableRotationVector(5);  //
   resetYaw();

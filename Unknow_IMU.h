@@ -65,33 +65,26 @@ int angleRead() {
   return lastYaw = yawZeroed;
 }
 
-void resetYaw() {
+// คืน true ถ้า reset สำเร็จ, false = gyro ไม่ส่งข้อมูล (บี๊บเตือน และ offset เป็นค่าเดิม)
+bool resetYaw() {
   if (!waitForRotVec(200)) {
     Serial.println("ResetYaw timeout: no rotation vector");
-    return;
+    Beep(500);
+    return false;
   }
   float yawNow = quatToYawDeg();
   yawOffset = yawNow;
   lastYaw = 0.0f;
   yawgyro = 0.0f;
+  return true;
 }
 
-// อ่านมุม 5 ครั้งแล้วหาค่าเฉลี่ย (เทียบกับค่าแรกเพื่อกันปัญหาข้าม ±180)
-float angleReadAvg() {
-  float first = angleRead();
-  float sum = 0;
-  for (int i = 0; i < 5; i++) {
-    sum += wrap180(angleRead() - first);
-    delay(5);
-  }
-  return wrap180(first + sum / 5.0f);
-}
 
 // รีเซ็ตมุมปัจจุบันของหุ่นยนต์ให้เป็น 0 องศา
 void setAngleOffset() {
   //  MotorStop();delay(20);
   resetYaw();
-  current_degree = angleReadAvg();
+  current_degree = angleRead();
   previous_errorG = 0;
   previous_errorGB = 0;
 }
@@ -187,7 +180,7 @@ void SetRobotAngle() {
 
 void resetAngle() {
   resetYaw();
-  current_degree = angleReadAvg();
+  current_degree = angleRead();
   previous_errorG = 0;
   previous_errorGB = 0;
 }
@@ -344,7 +337,8 @@ void turnDegreeB(int Speed, int relative_degree) {
 }
 
 void turnDegree_none(int Speed, int relative_degree) {
-  float stop_threshold = 1.0;
+  float stop_threshold = gyro_StopThr_Turn;
+  float previous_error = 0;
   float target_degree = current_degree + relative_degree;
   if (target_degree > 180.0f) target_degree -= 360.0f;
   if (target_degree < -180.0f) target_degree += 360.0f;
@@ -357,7 +351,13 @@ void turnDegree_none(int Speed, int relative_degree) {
     if (error > 180.0f) error -= 360.0f;
     else if (error < -180.0f) error += 360.0f;
 
-    if (error >= -stop_threshold && error <= stop_threshold) {
+    // ถ้าหมุนเร็ว มุมจะกระโดดข้ามช่วง ±stop_threshold ได้
+    // จึงถือว่าถึงเป้าเมื่อ error เปลี่ยนเครื่องหมาย (หมุนเลยเป้าแล้ว) ด้วย ไม่ให้หมุนกลับไปมา
+    // (|error| < 90 กันกรณี error กระโดดจาก +180 เป็น -180 ตอน wrap)
+    bool crossed = fabsf(error) < 90.0f && ((error > 0 && previous_error < 0) || (error < 0 && previous_error > 0));
+    previous_error = error;
+
+    if ((error >= -stop_threshold && error <= stop_threshold) || crossed) {
       //MotorStop();
       break;
     } else if (error > 0) {
@@ -370,7 +370,8 @@ void turnDegree_none(int Speed, int relative_degree) {
 }
 
 void turnDegreeb_none(int Speed, int relative_degree) {
-  float stop_threshold = 1.0;
+  float stop_threshold = gyro_StopThr_Turn;
+  float previous_error = 0;
   float target_degree = current_degree + relative_degree;
   if (target_degree > 180.0f) target_degree -= 360.0f;
   if (target_degree < -180.0f) target_degree += 360.0f;
@@ -383,7 +384,11 @@ void turnDegreeb_none(int Speed, int relative_degree) {
     if (error > 180.0f) error -= 360.0f;
     else if (error < -180.0f) error += 360.0f;
 
-    if (error >= -stop_threshold && error <= stop_threshold) {
+    // ถือว่าถึงเป้าเมื่อ error เปลี่ยนเครื่องหมายด้วย (ดู turnDegree_none)
+    bool crossed = fabsf(error) < 90.0f && ((error > 0 && previous_error < 0) || (error < 0 && previous_error > 0));
+    previous_error = error;
+
+    if ((error >= -stop_threshold && error <= stop_threshold) || crossed) {
       //MotorStop();
       break;
     } else if (error > 0) {
@@ -1162,9 +1167,9 @@ void rotateDegree(int SpeedL, int SpeedR, int relative_degree) {
 
 /* ---------- turn to absolute direction (อ้างอิงจากตอน resetAngles) เช่น 0, 90, 180, 270, 360 ---------- */
 
-// คำนวณมุมที่ต้องหมุนจากทิศปัจจุบันไปยังทิศทางสัมบูรณ์ (ทางที่สั้นที่สุด)
+// คำนวณมุมที่ต้องหมุนจากมุมปัจจุบันไปยังทิศทางสัมบูรณ์ (ทางที่สั้นที่สุด)
 int relativeToDirection(int direction) {
-  float relative = fmod((float)direction, 360.0f) - current_degree;
+  float relative = fmod((float)direction, 360.0f) - angleRead();
   while (relative > 180.0f) relative -= 360.0f;
   while (relative < -180.0f) relative += 360.0f;
   return (int)roundf(relative);
@@ -1214,12 +1219,6 @@ void SetDirectionG(int direction) {
   previous_errorGB = error;
 }
 
-// ทิศสำหรับถอยหลัง: direction = ทิศที่หุ่น "เคลื่อนที่ไป" (อ้างอิงเดียวกับเดินหน้า)
-// เช่น BBcmG(spd, cm, 180) = ถอยไปทางทิศ 180 โดยหน้าหุ่นหันทิศ 0
-void SetDirectionGB(int direction) {
-  SetDirectionG(direction + 180);
-}
-
 /* ---------- gyro straight with absolute direction ---------- */
 
 void FFtimerG(int Speed, int totalTime, int direction) {
@@ -1227,7 +1226,7 @@ void FFtimerG(int Speed, int totalTime, int direction) {
   FFtimerG(Speed, totalTime);
 }
 void BBtimerG(int Speed, int totalTime, int direction) {
-  SetDirectionGB(direction);
+  SetDirectionG(direction);
   BBtimerG(Speed, totalTime);
 }
 
@@ -1238,7 +1237,7 @@ void FFcmGS(int Speed, float distance_cm, int direction) {
   useDirectionG = false;
 }
 void BBcmGS(int Speed, float distance_cm, int direction) {
-  SetDirectionGB(direction);
+  SetDirectionG(direction);
   useDirectionG = true;
   BBcmGS(Speed, distance_cm);
   useDirectionG = false;
@@ -1251,7 +1250,7 @@ void FFcmG(int Speed, float distance_cm, int direction) {
   useDirectionG = false;
 }
 void BBcmG(int Speed, float distance_cm, int direction) {
-  SetDirectionGB(direction);
+  SetDirectionG(direction);
   useDirectionG = true;
   BBcmG(Speed, distance_cm);
   useDirectionG = false;
@@ -1262,7 +1261,7 @@ void FFBG(int Speed, char select, int direction) {
   FFBG(Speed, select);
 }
 void BBBG(int Speed, char select, int direction) {
-  SetDirectionGB(direction);
+  SetDirectionG(direction);
   BBBG(Speed, select);
 }
 
@@ -1293,40 +1292,4 @@ void FFcmG(int Speed, float distance_cm, char select, int direction) {
 void BBcmG(int Speed, float distance_cm, char select, int direction) {
   BBcmG(Speed, distance_cm, direction);
   TrackSelectGB(Speed, select);
-}
-
-/* ---------- to center (gyro) เช็คเซนเซอร์กลางข้างเดียว ---------- */
-
-void ToCenterLG() {
-  BZon();
-  RunG(tctL, tctR);
-  delay(20);
-  while (1) {
-    RunG(tctL, tctR);
-    ReadCalibrateC();
-    if (C[CCL] >= RefC) {
-      Motor(-tctL, -tctR);
-      delay(5);
-      MotorStop();
-      BZoff();
-      break;
-    }
-  }
-}
-
-void ToCenterRG() {
-  BZon();
-  RunG(tctL, tctR);
-  delay(20);
-  while (1) {
-    RunG(tctL, tctR);
-    ReadCalibrateC();
-    if (C[CCR] >= RefC) {
-      Motor(-tctL, -tctR);
-      delay(5);
-      MotorStop();
-      BZoff();
-      break;
-    }
-  }
 }

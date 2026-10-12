@@ -12,8 +12,6 @@ void setup_robot() {
   // set_line_center(0);  // เดินธรรมดา เข้ากลางหุ่น
   set_line_center(1);  // เดินตามเส้น เข้ากลางหุ่น
 
-  SetSlowKpKd(0.014, 0.14);
-
   /******************** GYRO SPEED MODE ********************/
   // เลือกเปิดใช้ทีละบรรทัด (mode, max, min)
   // ModeSpdGyro(0, 100, -10);  // 0 = ..max         ล้อติดลบ → min
