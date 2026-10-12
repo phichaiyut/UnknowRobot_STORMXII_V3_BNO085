@@ -1,8 +1,29 @@
+/* =====================================================================
+ *  Unknow_Sensor.h — เซนเซอร์เส้น 16CH หน้า/หลัง + คู่กลาง, คาลิเบรต, EEPROM
+ *
+ *  สารบัญ
+ *     1) ขา / ค่าคงที่
+ *     2) ตัวแปร (Global Variables)
+ *     3) Mux (เลือกช่องเซนเซอร์)
+ *     4) อ่านค่าดิบ
+ *     5) ตั้งค่าเซนเซอร์
+ *     6) ค่าคาลิเบรต (LightValue)
+ *     7) อ่านค่าที่คาลิเบรตแล้ว
+ *     8) คาลิเบรตอัตโนมัติ
+ *     9) บันทึก / โหลดค่าคาลิเบรต (EEPROM)
+ *    10) Serial Debug
+ * ===================================================================== */
+
 #ifndef UNKNOW_SENSOR_H
 #define UNKNOW_SENSOR_H
 
 #include <Arduino.h>
 #include <EEPROM.h>
+
+
+// =====================================================================
+//  1) ขา / ค่าคงที่
+// =====================================================================
 
 #define NUM_SENSORS 16
 #define S0 14
@@ -12,15 +33,18 @@
 #define S3B 17
 #define SIG A0
 #define SIGB A1
-
 #define BLACK 0
 #define WHITE 1
 #define CCL 0
 #define CCR 1
 
+
+// =====================================================================
+//  2) ตัวแปร (Global Variables)
+// =====================================================================
+
 uint8_t F_PIN[NUM_SENSORS] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
 uint8_t B_PIN[NUM_SENSORS] = { 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
-
 int F[NUM_SENSORS], B[NUM_SENSORS], C[2];
 int F_Ref[NUM_SENSORS], B_Ref[NUM_SENSORS], C_Ref[2];
 int minValueF[NUM_SENSORS], maxValueF[NUM_SENSORS];
@@ -38,13 +62,15 @@ int CENTER_MAX = 1000;
 // BACK
 int BACK_MIN = 80;
 int BACK_MAX = 90;
-
 int Ref = 500;
 int RefC = 500;
 int LineColor = 0;
 int TrackLineCH = 0;
 
-// ---------- Mux ----------
+
+// =====================================================================
+//  3) Mux (เลือกช่องเซนเซอร์)
+// =====================================================================
 
 inline void muxSelectF(uint8_t ch) {
   digitalWrite(S0, (ch >> 0) & 1);
@@ -75,11 +101,15 @@ int muxReadB(uint8_t ch) {
 uint16_t read_sensorA(int sensor) {
   return muxReadF(sensor);
 }
+
 uint16_t read_sensorB(int sensor) {
   return muxReadB(sensor);
 }
 
-// ---------- Raw Read ----------
+
+// =====================================================================
+//  4) อ่านค่าดิบ
+// =====================================================================
 
 void ReadF() {
   for (int i = 0; i < NUM_SENSORS; i++) F[i] = read_sensorA(F_PIN[i]);
@@ -93,6 +123,17 @@ void ReadC() {
   C[0] = analogRead(A6);
   C[1] = analogRead(A7);
 }
+
+void ReadSensorRaw() {
+  ReadF();
+  ReadB();
+  ReadC();
+}
+
+
+// =====================================================================
+//  5) ตั้งค่าเซนเซอร์
+// =====================================================================
 
 void clampSensorValueF(int x, int y) {
   FRONT_MIN = x;
@@ -109,7 +150,30 @@ void clampSensorValueB(int x, int y) {
   BACK_MAX = y;
 }
 
-// ---------- Calibration Values ----------
+void TrackLineColor(int Col) {
+  LineColor = Col;
+}
+
+void SwitchLine() {
+  LineColor = !LineColor;
+}
+
+void RefLineValue(int x) {
+  Ref = x;
+}
+
+void RefCenterLineValue(int x) {
+  RefC = x;
+}
+
+void SetSensorTrackLine_CH(int x) {
+  TrackLineCH = x;
+}
+
+
+// =====================================================================
+//  6) ค่าคาลิเบรต (LightValue)
+// =====================================================================
 
 void LightValue_FrontSensor(
   uint16_t minF0, uint16_t minF1, uint16_t minF2, uint16_t minF3,
@@ -204,25 +268,10 @@ void LightValue_BackSensor(
   maxValueB[15] = maxB15;
 }
 
-// ---------- Config Setters ----------
 
-void TrackLineColor(int Col) {
-  LineColor = Col;
-}
-void SwitchLine() {
-  LineColor = !LineColor;
-}
-void RefLineValue(int x) {
-  Ref = x;
-}
-void RefCenterLineValue(int x) {
-  RefC = x;
-}
-void SetSensorTrackLine_CH(int x) {
-  TrackLineCH = x;
-}
-
-// ---------- Calibrated Read ----------
+// =====================================================================
+//  7) อ่านค่าที่คาลิเบรตแล้ว
+// =====================================================================
 
 void ReadCalibrateF() {
   ReadF();
@@ -281,13 +330,10 @@ void ReadSensor() {
   ReadCalibrateC();
 }
 
-void ReadSensorRaw() {
-  ReadF();
-  ReadB();
-  ReadC();
-}
 
-// ---------- Auto Calibrate (FIX: init minValue=4095 for 12-bit ADC) ----------
+// =====================================================================
+//  8) คาลิเบรตอัตโนมัติ
+// =====================================================================
 
 void caribrateSensorF(int pauseTime, int samples) {
   for (int i = 0; i < NUM_SENSORS; i++) {
@@ -346,7 +392,10 @@ void caribrateSensorB(int pauseTime, int samples) {
   }
 }
 
-// ---------- EEPROM Calibration Storage ----------
+
+// =====================================================================
+//  9) บันทึก / โหลดค่าคาลิเบรต (EEPROM)
+// =====================================================================
 
 #define EEPROM_CALIB_ADDR 0
 #define EEPROM_CALIB_MAGIC 0xCA11
@@ -389,7 +438,10 @@ bool LoadCalibrateFromEEPROM() {
   return true;
 }
 
-// ---------- Serial Debug ----------
+
+// =====================================================================
+//  10) Serial Debug
+// =====================================================================
 
 void Serial_FrontSensor() {
   while (1) {

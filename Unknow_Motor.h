@@ -1,14 +1,70 @@
+/* =====================================================================
+ *  Unknow_Motor.h — สั่งมอเตอร์ และตั้งค่าความเร็ว / PID / เวลาเบรก ตามช่วงความเร็ว
+ *
+ *  สารบัญ
+ *     1) ขามอเตอร์
+ *     2) ตัวแปร (Global Variables)
+ *     3) index ช่วงความเร็ว (SPD_10 .. SPD_100)
+ *     4) สั่งมอเตอร์
+ *     5) ตั้งค่าตามช่วงความเร็ว
+ * ===================================================================== */
+
 #ifndef UNKNOW_MOTOR_H
 #define UNKNOW_MOTOR_H
 
 #include <Arduino.h>
+
+
+// =====================================================================
+//  1) ขามอเตอร์
+// =====================================================================
 
 #define PH1 22
 #define EN1 21
 #define PH2 25
 #define EN2 24
 
+
+// =====================================================================
+//  2) ตัวแปร (Global Variables)
+// =====================================================================
+
 int BalanceMotorLeft, BalanceMotorRight;
+int BaseSpeed, LeftBaseSpeed, RightBaseSpeed, BackLeftBaseSpeed, BackRightBaseSpeed;
+float PID_KP_Front, PID_KD_Front;
+float PID_KP_Back, PID_KD_Back;
+
+// int LastError_F, LastError_B;
+int L[10], R[10];
+int BL[10], BR[10];
+float KP[10], KD[10];
+float KP_Back[10], KD_Back[10];
+int delay_break_f = 30;
+int delay_break_b = 30;
+int delay_break_f_table[10] = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
+int delay_break_b_table[10] = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
+
+
+// =====================================================================
+//  3) index ช่วงความเร็ว (SPD_10 .. SPD_100)
+// =====================================================================
+
+// กำหนด index ความเร็ว
+#define SPD_10 0
+#define SPD_20 1
+#define SPD_30 2
+#define SPD_40 3
+#define SPD_50 4
+#define SPD_60 5
+#define SPD_70 6
+#define SPD_80 7
+#define SPD_90 8
+#define SPD_100 9
+
+
+// =====================================================================
+//  4) สั่งมอเตอร์
+// =====================================================================
 
 void Motor1(int Pow) {
   analogWriteResolution(12);
@@ -50,6 +106,7 @@ void MotorStop(int StopDelay) {
   MotorStop();
   delay(StopDelay);
 }
+
 void Stop(int StopDelay) {
   MotorStop();
   delay(StopDelay);
@@ -63,30 +120,10 @@ void TestMotor() {
   MotorStop();       // หยุดการทำงานมอเตอร์
 }
 
-int BaseSpeed, LeftBaseSpeed, RightBaseSpeed, BackLeftBaseSpeed, BackRightBaseSpeed;
-float PID_KP_Front, PID_KD_Front;
-float PID_KP_Back, PID_KD_Back;
-// int LastError_F, LastError_B;
-int L[10], R[10];
-int BL[10], BR[10];
-float KP[10], KD[10];
-float KP_Back[10], KD_Back[10];
-int delay_break_f = 30;
-int delay_break_b = 30;
-int delay_break_f_table[10] = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
-int delay_break_b_table[10] = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
 
-// กำหนด index ความเร็ว
-#define SPD_10 0
-#define SPD_20 1
-#define SPD_30 2
-#define SPD_40 3
-#define SPD_50 4
-#define SPD_60 5
-#define SPD_70 6
-#define SPD_80 7
-#define SPD_90 8
-#define SPD_100 9
+// =====================================================================
+//  5) ตั้งค่าตามช่วงความเร็ว
+// =====================================================================
 
 void setBalanceSpeed(int ch, int spdL, int spdR) {
   L[ch] = spdL;

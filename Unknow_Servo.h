@@ -1,7 +1,24 @@
+/* =====================================================================
+ *  Unknow_Servo.h — เซอร์โว (ที่คีบ / ยก)
+ *
+ *  สารบัญ
+ *     1) ขาเซอร์โว / ความเร็ว
+ *     2) ตัวแปร (Global Variables)
+ *     3) สั่งเซอร์โว
+ *     4) ตั้งความเร็ว
+ *     5) ตั้งองศา
+ *     6) ปรับองศาผ่าน Serial Monitor
+ * ===================================================================== */
+
 #ifndef UNKNOW_SERVO_H
 #define UNKNOW_SERVO_H
 
 #include <Servo.h>
+
+
+// =====================================================================
+//  1) ขาเซอร์โว / ความเร็ว
+// =====================================================================
 
 #define servo39 39
 #define servo38 38
@@ -9,22 +26,28 @@
 #define servo36 36
 #define servo35 35
 #define servo34 34
-
 #define SERVO_SLOW 6000
 #define SERVO_MEDIUM 1500
 #define SERVO_FAST 500
 
-Servo servo_39, servo_38, servo_37, servo_36, servo_35, servo_34;
 
+// =====================================================================
+//  2) ตัวแปร (Global Variables)
+// =====================================================================
+
+Servo servo_39, servo_38, servo_37, servo_36, servo_35, servo_34;
 int OpenL, OpenR, CloseL, CloseR, CloseLSmall, CloseRSmall;
 int Up, Up45, Down, OpenL2, OpenR2, OpenRMax, OpenLMax, OpenRMax2, OpenLMax2;
-
 int SPD_OPEN, SPD_OPENMAX, SPD_CLOSE, SPD_CLOSESMALL;
 int SPD_UP, SPD_UP45, SPD_DOWN;
-
 int servoPos[3] = { 90, 90, 90 };
+int currentServo = -1;
+int currentAngle = 90;
 
-// ---------- Direct Write (FIX: renamed from Servo() to avoid conflict with Servo class) ----------
+
+// =====================================================================
+//  3) สั่งเซอร์โว
+// =====================================================================
 
 void ServoWrite(int servo, int angle) {
   if (servo == 39) {
@@ -47,8 +70,6 @@ void ServoWrite(int servo, int angle) {
     servo_34.write(angle);
   }
 }
-
-// ---------- Speed-Controlled Move (IDs 0-2 only) ----------
 
 void ServoMoveSpeed(int servo, int targetAngle, int speedDelay) {
   if (servo < 0 || servo > 2) return;  // FIX: bounds check
@@ -81,48 +102,63 @@ void ServoMove2Sync(int sL, int targetL, int sR, int targetR, int speedDelay) {
   servoPos[sR] = targetR;
 }
 
-// ---------- Speed Setters ----------
+
+// =====================================================================
+//  4) ตั้งความเร็ว
+// =====================================================================
 
 void setServoSpeed_Up(int SpeedUp) {
   SPD_UP = SpeedUp;
 }
+
 void setServoSpeed_Up45(int SpeedUp45) {
   SPD_UP45 = SpeedUp45;
 }  // FIX: added missing setter
+
 void setServoSpeed_Down(int SpeedDown) {
   SPD_DOWN = SpeedDown;
 }
+
 void setServoSpeed_Open(int SpeedOpen) {
   SPD_OPEN = SpeedOpen;
   SPD_OPENMAX = SpeedOpen;
 }
+
 void setServoSpeed_Close(int SpeedClose) {
   SPD_CLOSE = SpeedClose;
   SPD_CLOSESMALL = SpeedClose;
 }
 
-// ---------- Position Setters ----------
+
+// =====================================================================
+//  5) ตั้งองศา
+// =====================================================================
 
 void setOpen(int degree1, int degree2) {
   OpenL = degree1;
   OpenR = degree2;
 }
+
 void setOpen2(int degree1, int degree2) {
   OpenL2 = degree1;
   OpenR2 = degree2;
 }
+
 void setOpenMax(int degree1, int degree2) {
   OpenLMax = degree1;
   OpenRMax = degree2;
 }
+
 void setOpenMax2(int degree1, int degree2) {
   OpenLMax2 = degree1;
   OpenRMax2 = degree2;
 }
+
 void setClose(int degree1, int degree2) {
   CloseL = degree1;
   CloseR = degree2;
 }
+
 void setCloseSmall(int degree1, int degree2) {
   CloseLSmall = degree1;
   CloseRSmall = degree2;
@@ -137,8 +173,11 @@ void setUpDown45(int degree1, int degree2) {  // FIX: added missing setter
   Up45 = degree1;
   Down = degree2;
 }
-int currentServo = -1;
-int currentAngle = 90;
+
+
+// =====================================================================
+//  6) ปรับองศาผ่าน Serial Monitor
+// =====================================================================
 
 void SerialServoControl() {
   Serial.println("Serial Servo Control Mode");
