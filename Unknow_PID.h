@@ -1050,7 +1050,7 @@ void TrackSelectF(int spd, char x) {
         Motor(tctL, tctR);
         delayMicroseconds(80);
         ReadCalibrateF();
-        if (F[12] < Ref) break;
+        if (F[3] < Ref && F[12] < Ref) break;
       }
     }
     delay(TurnDelayR);
