@@ -191,11 +191,12 @@ void resetGyroRunError() {
   if (error > 180.0f) error -= 360.0f;
   else if (error < -180.0f) error += 360.0f;
   previous_errorG = error;
-  previous_errorGB = error;
+  previous_errorGB = -error;  // RunGB ใช้ error กลับด้าน (angleRead() - current_degree)
 }
 
 void SetRobotAngle() {
   current_degree = angleRead();
+  resetGyroRunError();  // คำสั่ง cm เรียกหลัง InitialSpeed() จึงต้องรีเซ็ต D-term ใหม่ตามมุมที่จำ
 }
 
 void resetAngle() {
@@ -908,10 +909,10 @@ void ClampGyroPower(float &LeftPower, float &RightPower, int SpeedL, int SpeedR,
       if (RightPower < MinSpeedG) RightPower = MinSpeedG;
       break;
     case 2:  // -Speed-20..Speed+20
-      if (LeftPower > SpeedL) LeftPower = SpeedL + 20;
-      if (LeftPower < -SpeedL) LeftPower = -SpeedL - 20;
-      if (RightPower > SpeedR) RightPower = SpeedR + 20;
-      if (RightPower < -SpeedR) RightPower = -SpeedR - 20;
+      if (LeftPower > SpeedL + 20) LeftPower = SpeedL + 20;
+      if (LeftPower < -SpeedL - 20) LeftPower = -SpeedL - 20;
+      if (RightPower > SpeedR + 20) RightPower = SpeedR + 20;
+      if (RightPower < -SpeedR - 20) RightPower = -SpeedR - 20;
       break;
     case 3:  // ..max, ล้อติดลบ → -BaseSpeed
       if (LeftPower > MaxSpeedG) LeftPower = MaxSpeedG;
@@ -920,9 +921,9 @@ void ClampGyroPower(float &LeftPower, float &RightPower, int SpeedL, int SpeedR,
       if (RightPower < 0) RightPower = -BaseSpeed;
       break;
     case 4:  // ..Speed+20, ล้อติดลบ → min (min = 0 คือไม่ถอยล้อ)
-      if (LeftPower > SpeedL) LeftPower = SpeedL + 20;
+      if (LeftPower > SpeedL + 20) LeftPower = SpeedL + 20;
       if (LeftPower < 0) LeftPower = MinSpeedG;
-      if (RightPower > SpeedR) RightPower = SpeedR + 20;
+      if (RightPower > SpeedR + 20) RightPower = SpeedR + 20;
       if (RightPower < 0) RightPower = MinSpeedG;
       break;
     default:

@@ -905,8 +905,8 @@ void TurnRight_B() {
 void SpinLB(int Speed) {
   MotorStop();
   int sensorIdx;
-  if (tspd <= 50) sensorIdx = 6;
-  else if (tspd <= 60) sensorIdx = 4;
+  if (Speed <= 50) sensorIdx = 6;
+  else if (Speed <= 60) sensorIdx = 4;
   else sensorIdx = 2;
   for (int i = 0; i <= 3; i++) {
     do {
@@ -935,10 +935,10 @@ void SpinLB() {
 void SpinL2B(int Speed) {
   MotorStop();
   int sensorIdx;
-  if (tspd <= 50) sensorIdx = 6;
-  else if (tspd <= 60) sensorIdx = 4;
+  if (Speed <= 50) sensorIdx = 6;
+  else if (Speed <= 60) sensorIdx = 4;
   else sensorIdx = 2;
-  for (int i = 0; i <= sensorIdx; i++) {
+  for (int i = 0; i <= 3; i++) {
     do {
       Motor(-Speed, Speed);
       delayMicroseconds(80);
@@ -967,8 +967,8 @@ void SpinL2B() {
 void SpinRB(int Speed) {
   MotorStop();
   int sensorIdx;
-  if (tspd <= 50) sensorIdx = 9;
-  else if (tspd <= 60) sensorIdx = 11;
+  if (Speed <= 50) sensorIdx = 9;
+  else if (Speed <= 60) sensorIdx = 11;
   else sensorIdx = 13;
   for (int i = 15; i >= 12; i--) {
     do {
@@ -997,8 +997,8 @@ void SpinRB() {
 void SpinR2B(int Speed) {
   MotorStop();
   int sensorIdx;
-  if (tspd <= 50) sensorIdx = 9;
-  else if (tspd <= 60) sensorIdx = 11;
+  if (Speed <= 50) sensorIdx = 9;
+  else if (Speed <= 60) sensorIdx = 11;
   else sensorIdx = 13;
   for (int i = 15; i >= 12; i--) {
     do {
