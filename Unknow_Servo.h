@@ -36,13 +36,14 @@
 // =====================================================================
 
 Servo servo_39, servo_38, servo_37, servo_36, servo_35, servo_34;
-int OpenL, OpenR, CloseL, CloseR, CloseLSmall, CloseRSmall;
-int Up, Up45, Down, OpenL2, OpenR2, OpenRMax, OpenLMax, OpenRMax2, OpenLMax2;
-int SPD_OPEN, SPD_OPENMAX, SPD_CLOSE, SPD_CLOSESMALL;
-int SPD_UP, SPD_UP45, SPD_DOWN;
-int servoPos[3] = { 90, 90, 90 };
-int currentServo = -1;
-int currentAngle = 90;
+// องศา 0..255 = uint8_t | ความเร็ว (หน่วงต่อองศา หน่วย µs เช่น SERVO_SLOW 6000) = uint16_t
+uint8_t OpenL, OpenR, CloseL, CloseR, CloseLSmall, CloseRSmall;
+uint8_t Up, Up45, Down, OpenL2, OpenR2, OpenRMax, OpenLMax, OpenRMax2, OpenLMax2;
+uint16_t SPD_OPEN, SPD_OPENMAX, SPD_CLOSE, SPD_CLOSESMALL;
+uint16_t SPD_UP, SPD_UP45, SPD_DOWN;
+uint8_t servoPos[3] = { 90, 90, 90 };
+int16_t currentServo = -1;  // -1 = ยังไม่เลือก (int16_t ให้ Serial.print แสดงเป็นตัวเลข)
+uint8_t currentAngle = 90;
 
 
 // =====================================================================

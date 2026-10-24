@@ -12,13 +12,18 @@ void setup_robot() {
   // set_line_center(0);  // เดินธรรมดา เข้ากลางหุ่น
   set_line_center(1);  // เดินตามเส้น เข้ากลางหุ่น
 
+  /******************** DISTANCE SCALE ********************/
+  // ตัวคูณแปลงความเร็ว → ระยะทาง (ใช้ตอนสั่ง FFcm / BBcm)
+  // หุ่นเดินเกินระยะ ให้เพิ่มค่า | หุ่นเดินไม่ถึงระยะ ให้ลดค่า
+  set_speed_scale(1.5, 1.5);  // (เดินหน้า, ถอยหลัง)
+
   /******************** GYRO SPEED MODE ********************/
   // เลือกเปิดใช้ทีละบรรทัด (mode, max, min)
   // ModeSpdGyro(0, 100, -10);  // 0 = ..max         ล้อติดลบ → min
   // ModeSpdGyro(1, 100, -100); // 1 = min..max
-  // ModeSpdGyro(2, 100, -10);  // 2 = -Speed..Speed ถอยล้อได้เต็มที่
+  // ModeSpdGyro(2, 100, -10);  // 2 = -(Speed+20)..Speed+20 ถอยล้อได้เต็มที่
   // ModeSpdGyro(3, 100, -10);  // 3 = ..max         ล้อติดลบ → -Speed
-  ModeSpdGyro(4, 100, -5);  // 4 = ..Speed       ล้อติดลบ → min (ใส่ min = 0 คือไม่ถอยล้อ)
+  ModeSpdGyro(4, 100, -5);  // 4 = ..Speed+20    ล้อติดลบ → min (ใส่ min = 0 คือไม่ถอยล้อ)
   // ModeSpdGyro(2, 4, 100, -5);  // แยกโหมด (เดินหน้า, ถอยหลัง, max, min)
 
   /******************** GYRO PID CONFIG ********************/
@@ -28,6 +33,23 @@ void setup_robot() {
   // (kp, kd)
   SetGyroRun(0.25, 2.5);   // เดินหน้าตรงด้วยไจโร (RunG)
   SetGyroRunB(0.25, 2.5);  // ถอยหลังตรงด้วยไจโร (RunGB)
+
+  /******************** GYRO DISTANCE SCALE ********************/
+  // ตัวคูณแปลงความเร็ว → ระยะทาง ของคำสั่งวิ่งตรงตามระยะด้วยไจโร
+  // หุ่นเดินเกินระยะ ให้เพิ่มค่า | หุ่นเดินไม่ถึงระยะ ให้ลดค่า
+  set_speed_scale_ff_g(0.99, 1.75);     // FFcmG (ระยะ >= 30 cm มีเร่ง/ชะลอ, ระยะ < 30 cm)
+  set_speed_scale_bb_g(0.99, 1.5);      // BBcmG (ระยะ >= 30 cm มีเร่ง/ชะลอ, ระยะ < 30 cm)
+  set_speed_scale_ff_bb_gs(1.75, 1.5);  // FFcmGS / BBcmGS (เดินหน้า, ถอยหลัง)
+
+  /******************** GYRO BRAKE ********************/
+  // _setg(ms)   = เวลาล็อกมุม (SetG) หลังหมุน/เลี้ยวเสร็จ ให้หุ่นนิ่งตรงมุม
+  // (spd, ms)   = จังหวะเบรกสวนทิศสั้น ๆ ทันทีที่ถึงมุม | หมุนเกินมุม ให้เพิ่ม spd/ms | เด้งกลับ ให้ลด
+  set_brake_spin_gyro_setg(100);  // spinDegree: เวลาล็อกมุมหลังหมุนเสร็จ (ms)
+  set_brake_spin_gyro(12, 5);     // spinDegree: เบรกสวนทิศ (ความเร็ว, ms)
+  set_brake_turn_gyro_setg(10);   // turnDegree: เวลาล็อกมุมหลังเลี้ยวเสร็จ (ms)
+  set_brake_turn_gyro(12, 5);     // turnDegree: เบรกล้อที่เดินอยู่ (ความเร็ว, ms)
+  set_brake_turn_b_gyro_setg(10); // turnDegreeB: เวลาล็อกมุมหลังเลี้ยวถอยหลังเสร็จ (ms)
+  set_brake_turn_b_gyro(12, 5);   // turnDegreeB: เบรกล้อที่ถอยอยู่ (ความเร็ว, ms)
   //SerialCalibrate_AllSensor(); //โชว์ค่าคาลิเบท เซนเซอร์ทั้งหมด
   //SerialPositionFB();
 }

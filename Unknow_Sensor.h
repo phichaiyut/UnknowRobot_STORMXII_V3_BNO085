@@ -43,29 +43,31 @@
 //  2) ตัวแปร (Global Variables)
 // =====================================================================
 
-uint8_t F_PIN[NUM_SENSORS] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-uint8_t B_PIN[NUM_SENSORS] = { 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
-int F[NUM_SENSORS], B[NUM_SENSORS], C[2];
-int F_Ref[NUM_SENSORS], B_Ref[NUM_SENSORS], C_Ref[2];
-int minValueF[NUM_SENSORS], maxValueF[NUM_SENSORS];
-int minValueB[NUM_SENSORS], maxValueB[NUM_SENSORS];
-int minValueC[2], maxValueC[2];
+// ตารางช่อง mux คงที่ → const เก็บใน flash ไม่กิน RAM
+const uint8_t F_PIN[NUM_SENSORS] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+const uint8_t B_PIN[NUM_SENSORS] = { 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
+
+// ค่าเซนเซอร์ดิบ 0..4095 / ค่าคาลิเบรต 0..1000 → int16_t พอ (ต้องมีเครื่องหมาย เพราะ max - 80 ติดลบได้)
+int16_t F[NUM_SENSORS], B[NUM_SENSORS], C[2];
+int16_t minValueF[NUM_SENSORS], maxValueF[NUM_SENSORS];
+int16_t minValueB[NUM_SENSORS], maxValueB[NUM_SENSORS];
+int16_t minValueC[2], maxValueC[2];
 
 // FRONT
-int FRONT_MIN = 80;
-int FRONT_MAX = 900;
+int16_t FRONT_MIN = 80;
+int16_t FRONT_MAX = 900;
 
 // CENTER
-int CENTER_MIN = 0;
-int CENTER_MAX = 1000;
+int16_t CENTER_MIN = 0;
+int16_t CENTER_MAX = 1000;
 
 // BACK
-int BACK_MIN = 80;
-int BACK_MAX = 90;
-int Ref = 500;
-int RefC = 500;
-int LineColor = 0;
-int TrackLineCH = 0;
+int16_t BACK_MIN = 80;
+int16_t BACK_MAX = 90;
+int16_t Ref = 500;
+int16_t RefC = 500;
+uint8_t LineColor = 0;    // BLACK / WHITE
+uint8_t TrackLineCH = 0;  // 6..16
 
 
 // =====================================================================
@@ -398,16 +400,17 @@ void caribrateSensorB(int pauseTime, int samples) {
 // =====================================================================
 
 #define EEPROM_CALIB_ADDR 0
-#define EEPROM_CALIB_MAGIC 0xCA11
+// 0xCA12: เปลี่ยนจาก int → int16_t (ขนาดข้อมูลลดครึ่ง) ค่าที่บันทึกด้วย 0xCA11 จะไม่ถูกโหลด ต้องคาลิเบรตใหม่ 1 ครั้ง
+#define EEPROM_CALIB_MAGIC 0xCA12
 
 struct SensorCalibData {
   uint16_t magic;
-  int minValueF[NUM_SENSORS];
-  int maxValueF[NUM_SENSORS];
-  int minValueB[NUM_SENSORS];
-  int maxValueB[NUM_SENSORS];
-  int minValueC[2];
-  int maxValueC[2];
+  int16_t minValueF[NUM_SENSORS];
+  int16_t maxValueF[NUM_SENSORS];
+  int16_t minValueB[NUM_SENSORS];
+  int16_t maxValueB[NUM_SENSORS];
+  int16_t minValueC[2];
+  int16_t maxValueC[2];
 };
 
 void SaveCalibrateToEEPROM() {
