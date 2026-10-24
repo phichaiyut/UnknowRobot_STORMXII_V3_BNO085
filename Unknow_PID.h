@@ -6,13 +6,13 @@
  *     2) ตั้งค่า (Config)
  *     3) อ่านตำแหน่งเส้น (Line Position)
  *     4) PID พื้นฐาน
- *     5) เดินตามเส้น จับเวลา / ระยะทาง
+ *     5) เดินตามเส้น จับเวลา / ระยะทาง (พื้นฐาน)
  *     6) เข้ากลางหุ่น / เข้าหาเส้น
  *     7) เลี้ยว / หมุน ด้วยเซนเซอร์หน้า
  *     8) เลี้ยว / หมุน ด้วยเซนเซอร์หลัง
  *     9) คำสั่งเมื่อเจอแยก (Track Select)
- *    10) เดินตามเส้น + คำสั่งเจอแยก
- *    11) เดินตามเส้น + กำหนด kp kd เอง
+ *    10) เดินตามเส้น จับเวลา / ระยะทาง + kp / kd / คำสั่งเจอแยก
+ *    11) เดินตามเส้นจนเจอแยก
  *    12) วิ่งเกาะขอบเส้น (CirCle)
  *    13) ออกตัว / เข้าเส้นชัย
  *    14) ปรับสมดุลหุ่นยนต์ (Balance)
@@ -38,6 +38,7 @@ void SetBG(int totalTime);
 // =====================================================================
 
 // ---------- ค่า PID หลัก ----------
+//  1) ตัวแปร (Global Variables)
 float PID_KP, PID_KD;
 
 // ---------- ความเร็ว / PID ตอนเข้ากลางหุ่น และเลี้ยว ----------
@@ -45,7 +46,7 @@ int8_t tspd;
 int16_t tctL, tctR, bctL, bctR;  // มาจาก LeftBaseSpeed ฯลฯ (รวมค่า balance แล้ว)
 int8_t LTurnSpdL, LTurnSpdR;
 int8_t RTurnSpdL, RTurnSpdR;
-uint16_t TurnDelayL, TurnDelayR;  // ms
+uint16_t TurnDelayL, TurnDelayR;    // ms
 uint8_t LChTurn = 5, RChTurn = 10;  // index เซนเซอร์ 0..15
 uint8_t LChTurnB = 5, RChTurnB = 10;
 uint16_t tct_delay_break = 0;
@@ -74,6 +75,7 @@ float speed_scale_bb = 1.75;  // <-- ใช้ค่าที่คำนวณ�
 //  2) ตั้งค่า (Config)
 // =====================================================================
 
+//  2) ตั้งค่า (Config)
 void SetRobotPID(float Kp, float Kd) {
   PID_KP = Kp;
   PID_KD = Kd;
@@ -179,6 +181,8 @@ void set_line_center(int x) {
 // =====================================================================
 //  3) อ่านตำแหน่งเส้น (Line Position)
 // =====================================================================
+
+//  3) อ่านตำแหน่งเส้น (Line Position)
 
 // int readPositionF(int Track, int noise) {
 //   unsigned char i, online = 0;
@@ -340,6 +344,7 @@ int readPositionB_none(int Track, int noise) {
 //  4) PID พื้นฐาน
 // =====================================================================
 
+//  4) PID พื้นฐาน
 void ClampPower(int &LeftPower, int &RightPower, int SpeedL, int SpeedR) {
   switch (ModePidStatus) {
     case 0:
@@ -444,8 +449,10 @@ void PIDB_none(int SpeedL, int SpeedR, float Kp, float Kd) {
 
 
 // =====================================================================
-//  5) เดินตามเส้น จับเวลา / ระยะทาง
+//  5) เดินตามเส้น จับเวลา / ระยะทาง (พื้นฐาน)
 // =====================================================================
+
+//  5) เดินตามเส้น จับเวลา / ระยะทาง
 
 // Kp / Kd ติดลบ = ใช้ค่าจากตารางความเร็ว (PID_KP_Front/Back, PID_KD_Front/Back)
 static void FFtimer_pid(int baseSpeed, int totalTime, float Kp, float Kd) {
@@ -547,6 +554,7 @@ void BBcm(int Speed, float distance) {
 //  6) เข้ากลางหุ่น / เข้าหาเส้น
 // =====================================================================
 
+//  6) เข้ากลางหุ่น / เข้าหาเส้น
 void ToCenter() {
   BZon();
   if (line_centor == 0) {
@@ -694,6 +702,8 @@ void BackCenter() {
 // =====================================================================
 
 // ---------- จัดตรงเส้นอยู่กับที่ (LF / LB) ----------
+//  7) เลี้ยว / หมุน ด้วยเซนเซอร์หน้า
+
 // จัดหุ่นให้ตรงเส้นอยู่กับที่ด้วย PID (ความเร็วฐาน 0) เป็นเวลา totalTime ms
 void LF(int totalTime) {
   unsigned long endTime = millis() + totalTime;
@@ -878,6 +888,8 @@ void SpinR2() {
 // =====================================================================
 
 // ---------- เลี้ยวล้อเดียว ----------
+//  8) เลี้ยว / หมุน ด้วยเซนเซอร์หลัง
+
 // เลี้ยวล้อเดียว: หมุนจนเซนเซอร์หลังเจอเส้นไล่ทีละตัว B[0..LChTurnB] (ซ้าย) / B[15..RChTurnB] (ขวา)
 void TurnLeft_B() {
   for (int i = 0; i <= LChTurnB; i++) {
@@ -1031,6 +1043,7 @@ void SpinR2B() {
 //  9) คำสั่งเมื่อเจอแยก (Track Select)
 // =====================================================================
 
+//  9) คำสั่งเมื่อเจอแยก (Track Select)
 void TrackSelectF(int spd, char x) {
   if (x == 's') {
     Motor(-spd, -spd);
@@ -1303,15 +1316,38 @@ void TrackSelectB(int spd, char x) {
 
 
 // =====================================================================
-//  10) เดินตามเส้น + คำสั่งเจอแยก
+//  10) เดินตามเส้น จับเวลา / ระยะทาง + kp / kd / คำสั่งเจอแยก
 // =====================================================================
 
-// ---------- จับเวลา / ระยะทาง ----------
+// ---------- จับเวลา: (speed, [kp, [kd,]] ms [, select])  ใส่ค่าติดลบ = ใช้ค่าจากตาราง ----------
+//  10) เดินตามเส้น + คำสั่งเจอแยก
 void FFtimer(int Speed, int totalTime, char select) {
   BaseSpeed = Speed;
   InitialSpeed();
   unsigned long endTime = millis() + totalTime;
   while (millis() <= endTime) PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
+  TrackSelectF(Speed, select);
+}
+
+//  11) เดินตามเส้น + กำหนด kp kd เอง
+
+// (speed, kp, [kd,] เวลา/ระยะ [, select])  ใส่ค่าติดลบ = ใช้ค่าจากตาราง
+// เวลา/ระยะ เป็น int เพื่อไม่ให้ชนกับ FFtimer(speed, ms, select) / FFcm(speed, cm, select)
+void FFtimer(int Speed, float Kp, int totalTime) {
+  FFtimer_pid(Speed, totalTime, Kp, -1);
+}
+
+void FFtimer(int Speed, float Kp, int totalTime, char select) {
+  FFtimer_pid(Speed, totalTime, Kp, -1);
+  TrackSelectF(Speed, select);
+}
+
+void FFtimer(int Speed, float Kp, float Kd, int totalTime) {
+  FFtimer_pid(Speed, totalTime, Kp, Kd);
+}
+
+void FFtimer(int Speed, float Kp, float Kd, int totalTime, char select) {
+  FFtimer_pid(Speed, totalTime, Kp, Kd);
   TrackSelectF(Speed, select);
 }
 
@@ -1323,8 +1359,45 @@ void BBtimer(int Speed, int totalTime, char select) {
   TrackSelectB(Speed, select);
 }
 
+void BBtimer(int Speed, float Kp, int totalTime) {
+  BBtimer_pid(Speed, totalTime, Kp, -1);
+}
+
+void BBtimer(int Speed, float Kp, int totalTime, char select) {
+  BBtimer_pid(Speed, totalTime, Kp, -1);
+  TrackSelectB(Speed, select);
+}
+
+void BBtimer(int Speed, float Kp, float Kd, int totalTime) {
+  BBtimer_pid(Speed, totalTime, Kp, Kd);
+}
+
+void BBtimer(int Speed, float Kp, float Kd, int totalTime, char select) {
+  BBtimer_pid(Speed, totalTime, Kp, Kd);
+  TrackSelectB(Speed, select);
+}
+
+// ---------- ระยะทาง: (speed, [kp, [kd,]] cm [, select])  cm เป็น int เมื่อใส่ kp เพื่อไม่ชนกับ (speed, cm, select) ----------
 void FFcm(int Speed, float distance, char select) {
   FFcm(Speed, distance);
+  TrackSelectF(Speed, select);
+}
+
+void FFcm(int Speed, float Kp, int distance) {
+  FFcm_pid(Speed, distance, Kp, -1);
+}
+
+void FFcm(int Speed, float Kp, int distance, char select) {
+  FFcm_pid(Speed, distance, Kp, -1);
+  TrackSelectF(Speed, select);
+}
+
+void FFcm(int Speed, float Kp, float Kd, int distance) {
+  FFcm_pid(Speed, distance, Kp, Kd);
+}
+
+void FFcm(int Speed, float Kp, float Kd, int distance, char select) {
+  FFcm_pid(Speed, distance, Kp, Kd);
   TrackSelectF(Speed, select);
 }
 
@@ -1333,7 +1406,30 @@ void BBcm(int Speed, float distance, char select) {
   TrackSelectB(Speed, select);
 }
 
-// ---------- วิ่งจนเจอแยก ----------
+void BBcm(int Speed, float Kp, int distance) {
+  BBcm_pid(Speed, distance, Kp, -1);
+}
+
+void BBcm(int Speed, float Kp, int distance, char select) {
+  BBcm_pid(Speed, distance, Kp, -1);
+  TrackSelectB(Speed, select);
+}
+
+void BBcm(int Speed, float Kp, float Kd, int distance) {
+  BBcm_pid(Speed, distance, Kp, Kd);
+}
+
+void BBcm(int Speed, float Kp, float Kd, int distance, char select) {
+  BBcm_pid(Speed, distance, Kp, Kd);
+  TrackSelectB(Speed, select);
+}
+
+
+// =====================================================================
+//  11) เดินตามเส้นจนเจอแยก
+// =====================================================================
+
+// ---------- จับแยก: (speed, [kp, [kd,]] select) ----------
 // ทุกคำสั่งในหมวดนี้ใส่ Kp / Kd เองได้ต่อจาก speed: (speed, select) / (speed, Kp, select) / (speed, Kp, Kd, select)
 // ใส่ค่าติดลบ หรือไม่ใส่ = ใช้ค่าจากตารางความเร็ว (PID_KP_Front/Back, PID_KD_Front/Back)
 void FFC(int Speed, float Kp, float Kd, char select) {
@@ -1630,6 +1726,7 @@ void BBNUM(int Speed, char select, int numm) {
   BBNUM(Speed, -1, -1, select, numm);
 }
 
+// ---------- ผลรวมเซนเซอร์ (FFSUM / BBSUM) ----------
 // วิ่งตามเส้นจนผลรวมเซนเซอร์หน้า F[0]..F[15] (แต่ละตัว 0-1000) >= sum_target (0-16000)
 void FFSUM(int Speed, float Kp, float Kd, char select, int sum_target) {
   BaseSpeed = Speed;
@@ -1676,7 +1773,7 @@ void BBSUM(int Speed, char select, int sum_target) {
   BBSUM(Speed, -1, -1, select, sum_target);
 }
 
-// ---------- วิ่งจนเจอพื้นดำ / พื้นขาว ----------
+// ---------- พื้นดำ / พื้นขาว ----------
 void FFBlack(int SpeedL, int SpeedR, char select) {
   Move(SpeedL, SpeedR, 50);
   while (1) {
@@ -1753,89 +1850,11 @@ void BBWhite(int Speed, char select) {
 
 
 // =====================================================================
-//  11) เดินตามเส้น + กำหนด kp kd เอง
-// =====================================================================
-
-// (speed, kp, [kd,] เวลา/ระยะ [, select])  ใส่ค่าติดลบ = ใช้ค่าจากตาราง
-// เวลา/ระยะ เป็น int เพื่อไม่ให้ชนกับ FFtimer(speed, ms, select) / FFcm(speed, cm, select)
-void FFtimer(int Speed, float Kp, int totalTime) {
-  FFtimer_pid(Speed, totalTime, Kp, -1);
-}
-
-void FFtimer(int Speed, float Kp, int totalTime, char select) {
-  FFtimer_pid(Speed, totalTime, Kp, -1);
-  TrackSelectF(Speed, select);
-}
-
-void FFtimer(int Speed, float Kp, float Kd, int totalTime) {
-  FFtimer_pid(Speed, totalTime, Kp, Kd);
-}
-
-void FFtimer(int Speed, float Kp, float Kd, int totalTime, char select) {
-  FFtimer_pid(Speed, totalTime, Kp, Kd);
-  TrackSelectF(Speed, select);
-}
-
-void BBtimer(int Speed, float Kp, int totalTime) {
-  BBtimer_pid(Speed, totalTime, Kp, -1);
-}
-
-void BBtimer(int Speed, float Kp, int totalTime, char select) {
-  BBtimer_pid(Speed, totalTime, Kp, -1);
-  TrackSelectB(Speed, select);
-}
-
-void BBtimer(int Speed, float Kp, float Kd, int totalTime) {
-  BBtimer_pid(Speed, totalTime, Kp, Kd);
-}
-
-void BBtimer(int Speed, float Kp, float Kd, int totalTime, char select) {
-  BBtimer_pid(Speed, totalTime, Kp, Kd);
-  TrackSelectB(Speed, select);
-}
-
-void FFcm(int Speed, float Kp, int distance) {
-  FFcm_pid(Speed, distance, Kp, -1);
-}
-
-void FFcm(int Speed, float Kp, int distance, char select) {
-  FFcm_pid(Speed, distance, Kp, -1);
-  TrackSelectF(Speed, select);
-}
-
-void FFcm(int Speed, float Kp, float Kd, int distance) {
-  FFcm_pid(Speed, distance, Kp, Kd);
-}
-
-void FFcm(int Speed, float Kp, float Kd, int distance, char select) {
-  FFcm_pid(Speed, distance, Kp, Kd);
-  TrackSelectF(Speed, select);
-}
-
-void BBcm(int Speed, float Kp, int distance) {
-  BBcm_pid(Speed, distance, Kp, -1);
-}
-
-void BBcm(int Speed, float Kp, int distance, char select) {
-  BBcm_pid(Speed, distance, Kp, -1);
-  TrackSelectB(Speed, select);
-}
-
-void BBcm(int Speed, float Kp, float Kd, int distance) {
-  BBcm_pid(Speed, distance, Kp, Kd);
-}
-
-void BBcm(int Speed, float Kp, float Kd, int distance, char select) {
-  BBcm_pid(Speed, distance, Kp, Kd);
-  TrackSelectB(Speed, select);
-}
-
-
-// =====================================================================
 //  12) วิ่งเกาะขอบเส้น (CirCle)
 // =====================================================================
 
 // ---------- วิ่งจนเจอแยก ----------
+//  12) วิ่งเกาะขอบเส้น (CirCle)
 void FFCirCleL(int Speed, float Kp, float Kd, char select) {
   int temp_position = set_position;
   set_position = set_position_l;
@@ -1932,17 +1951,10 @@ void BBCirCleR(int Speed, char select) {
   BBCirCleR(Speed, -1, -1, select);
 }
 
-// ---------- จับเวลา ----------
+// ---------- จับเวลา: (speed, [kp, [kd,]] ms [, select]) ----------
 void FFtimerCirCleL(int Speed, int totalTime) {
   int temp_position = set_position;
   set_position = set_position_l;
-  FFtimer(Speed, totalTime);
-  set_position = temp_position;
-}
-
-void FFtimerCirCleR(int Speed, int totalTime) {
-  int temp_position = set_position;
-  set_position = set_position_r;
   FFtimer(Speed, totalTime);
   set_position = temp_position;
 }
@@ -1952,85 +1964,6 @@ void FFtimerCirCleL(int Speed, int totalTime, char select) {
   TrackSelectF(Speed, select);
 }
 
-void FFtimerCirCleR(int Speed, int totalTime, char select) {
-  FFtimerCirCleR(Speed, totalTime);
-  TrackSelectF(Speed, select);
-}
-
-void BBtimerCirCleL(int Speed, int totalTime) {
-  int temp_position = set_position;
-  set_position = set_position_l;
-  BBtimer(Speed, totalTime);
-  set_position = temp_position;
-}
-
-void BBtimerCirCleR(int Speed, int totalTime) {
-  int temp_position = set_position;
-  set_position = set_position_r;
-  BBtimer(Speed, totalTime);
-  set_position = temp_position;
-}
-
-void BBtimerCirCleL(int Speed, int totalTime, char select) {
-  BBtimerCirCleL(Speed, totalTime);
-  TrackSelectB(Speed, select);
-}
-
-void BBtimerCirCleR(int Speed, int totalTime, char select) {
-  BBtimerCirCleR(Speed, totalTime);
-  TrackSelectB(Speed, select);
-}
-
-// ---------- ระยะทาง ----------
-void FFcmCirCleL(int Speed, int totalTime) {
-  int temp_position = set_position;
-  set_position = set_position_l;
-  FFcm(Speed, totalTime);
-  set_position = temp_position;
-}
-
-void FFcmCirCleR(int Speed, int totalTime) {
-  int temp_position = set_position;
-  set_position = set_position_r;
-  FFcm(Speed, totalTime);
-  set_position = temp_position;
-}
-
-void FFcmCirCleL(int Speed, int totalTime, char select) {
-  FFcmCirCleL(Speed, totalTime);
-  TrackSelectF(Speed, select);
-}
-
-void FFcmCirCleR(int Speed, int totalTime, char select) {
-  FFcmCirCleR(Speed, totalTime);
-  TrackSelectF(Speed, select);
-}
-
-void BBcmCirCleL(int Speed, int totalTime) {
-  int temp_position = set_position;
-  set_position = set_position_l;
-  BBcm(Speed, totalTime);
-  set_position = temp_position;
-}
-
-void BBcmCirCleR(int Speed, int totalTime) {
-  int temp_position = set_position;
-  set_position = set_position_r;
-  BBcm(Speed, totalTime);
-  set_position = temp_position;
-}
-
-void BBcmCirCleL(int Speed, int totalTime, char select) {
-  BBcmCirCleL(Speed, totalTime);
-  TrackSelectB(Speed, select);
-}
-
-void BBcmCirCleR(int Speed, int totalTime, char select) {
-  BBcmCirCleR(Speed, totalTime);
-  TrackSelectB(Speed, select);
-}
-
-// ---------- กำหนด kp / kd เอง: (speed, kp, [kd,] เวลา/ระยะ [, select]) ----------
 void FFtimerCirCleL(int Speed, float Kp, int totalTime) {
   int temp_position = set_position;
   set_position = set_position_l;
@@ -2052,6 +1985,18 @@ void FFtimerCirCleL(int Speed, float Kp, float Kd, int totalTime) {
 
 void FFtimerCirCleL(int Speed, float Kp, float Kd, int totalTime, char select) {
   FFtimerCirCleL(Speed, Kp, Kd, totalTime);
+  TrackSelectF(Speed, select);
+}
+
+void FFtimerCirCleR(int Speed, int totalTime) {
+  int temp_position = set_position;
+  set_position = set_position_r;
+  FFtimer(Speed, totalTime);
+  set_position = temp_position;
+}
+
+void FFtimerCirCleR(int Speed, int totalTime, char select) {
+  FFtimerCirCleR(Speed, totalTime);
   TrackSelectF(Speed, select);
 }
 
@@ -2079,52 +2024,16 @@ void FFtimerCirCleR(int Speed, float Kp, float Kd, int totalTime, char select) {
   TrackSelectF(Speed, select);
 }
 
-void FFcmCirCleL(int Speed, float Kp, int distance) {
+void BBtimerCirCleL(int Speed, int totalTime) {
   int temp_position = set_position;
   set_position = set_position_l;
-  FFcm(Speed, Kp, distance);
+  BBtimer(Speed, totalTime);
   set_position = temp_position;
 }
 
-void FFcmCirCleL(int Speed, float Kp, int distance, char select) {
-  FFcmCirCleL(Speed, Kp, distance);
-  TrackSelectF(Speed, select);
-}
-
-void FFcmCirCleL(int Speed, float Kp, float Kd, int distance) {
-  int temp_position = set_position;
-  set_position = set_position_l;
-  FFcm(Speed, Kp, Kd, distance);
-  set_position = temp_position;
-}
-
-void FFcmCirCleL(int Speed, float Kp, float Kd, int distance, char select) {
-  FFcmCirCleL(Speed, Kp, Kd, distance);
-  TrackSelectF(Speed, select);
-}
-
-void FFcmCirCleR(int Speed, float Kp, int distance) {
-  int temp_position = set_position;
-  set_position = set_position_r;
-  FFcm(Speed, Kp, distance);
-  set_position = temp_position;
-}
-
-void FFcmCirCleR(int Speed, float Kp, int distance, char select) {
-  FFcmCirCleR(Speed, Kp, distance);
-  TrackSelectF(Speed, select);
-}
-
-void FFcmCirCleR(int Speed, float Kp, float Kd, int distance) {
-  int temp_position = set_position;
-  set_position = set_position_r;
-  FFcm(Speed, Kp, Kd, distance);
-  set_position = temp_position;
-}
-
-void FFcmCirCleR(int Speed, float Kp, float Kd, int distance, char select) {
-  FFcmCirCleR(Speed, Kp, Kd, distance);
-  TrackSelectF(Speed, select);
+void BBtimerCirCleL(int Speed, int totalTime, char select) {
+  BBtimerCirCleL(Speed, totalTime);
+  TrackSelectB(Speed, select);
 }
 
 void BBtimerCirCleL(int Speed, float Kp, int totalTime) {
@@ -2148,6 +2057,18 @@ void BBtimerCirCleL(int Speed, float Kp, float Kd, int totalTime) {
 
 void BBtimerCirCleL(int Speed, float Kp, float Kd, int totalTime, char select) {
   BBtimerCirCleL(Speed, Kp, Kd, totalTime);
+  TrackSelectB(Speed, select);
+}
+
+void BBtimerCirCleR(int Speed, int totalTime) {
+  int temp_position = set_position;
+  set_position = set_position_r;
+  BBtimer(Speed, totalTime);
+  set_position = temp_position;
+}
+
+void BBtimerCirCleR(int Speed, int totalTime, char select) {
+  BBtimerCirCleR(Speed, totalTime);
   TrackSelectB(Speed, select);
 }
 
@@ -2175,6 +2096,91 @@ void BBtimerCirCleR(int Speed, float Kp, float Kd, int totalTime, char select) {
   TrackSelectB(Speed, select);
 }
 
+// ---------- ระยะทาง: (speed, [kp, [kd,]] cm [, select]) ----------
+void FFcmCirCleL(int Speed, int totalTime) {
+  int temp_position = set_position;
+  set_position = set_position_l;
+  FFcm(Speed, totalTime);
+  set_position = temp_position;
+}
+
+void FFcmCirCleL(int Speed, int totalTime, char select) {
+  FFcmCirCleL(Speed, totalTime);
+  TrackSelectF(Speed, select);
+}
+
+void FFcmCirCleL(int Speed, float Kp, int distance) {
+  int temp_position = set_position;
+  set_position = set_position_l;
+  FFcm(Speed, Kp, distance);
+  set_position = temp_position;
+}
+
+void FFcmCirCleL(int Speed, float Kp, int distance, char select) {
+  FFcmCirCleL(Speed, Kp, distance);
+  TrackSelectF(Speed, select);
+}
+
+void FFcmCirCleL(int Speed, float Kp, float Kd, int distance) {
+  int temp_position = set_position;
+  set_position = set_position_l;
+  FFcm(Speed, Kp, Kd, distance);
+  set_position = temp_position;
+}
+
+void FFcmCirCleL(int Speed, float Kp, float Kd, int distance, char select) {
+  FFcmCirCleL(Speed, Kp, Kd, distance);
+  TrackSelectF(Speed, select);
+}
+
+void FFcmCirCleR(int Speed, int totalTime) {
+  int temp_position = set_position;
+  set_position = set_position_r;
+  FFcm(Speed, totalTime);
+  set_position = temp_position;
+}
+
+void FFcmCirCleR(int Speed, int totalTime, char select) {
+  FFcmCirCleR(Speed, totalTime);
+  TrackSelectF(Speed, select);
+}
+
+void FFcmCirCleR(int Speed, float Kp, int distance) {
+  int temp_position = set_position;
+  set_position = set_position_r;
+  FFcm(Speed, Kp, distance);
+  set_position = temp_position;
+}
+
+void FFcmCirCleR(int Speed, float Kp, int distance, char select) {
+  FFcmCirCleR(Speed, Kp, distance);
+  TrackSelectF(Speed, select);
+}
+
+void FFcmCirCleR(int Speed, float Kp, float Kd, int distance) {
+  int temp_position = set_position;
+  set_position = set_position_r;
+  FFcm(Speed, Kp, Kd, distance);
+  set_position = temp_position;
+}
+
+void FFcmCirCleR(int Speed, float Kp, float Kd, int distance, char select) {
+  FFcmCirCleR(Speed, Kp, Kd, distance);
+  TrackSelectF(Speed, select);
+}
+
+void BBcmCirCleL(int Speed, int totalTime) {
+  int temp_position = set_position;
+  set_position = set_position_l;
+  BBcm(Speed, totalTime);
+  set_position = temp_position;
+}
+
+void BBcmCirCleL(int Speed, int totalTime, char select) {
+  BBcmCirCleL(Speed, totalTime);
+  TrackSelectB(Speed, select);
+}
+
 void BBcmCirCleL(int Speed, float Kp, int distance) {
   int temp_position = set_position;
   set_position = set_position_l;
@@ -2196,6 +2202,18 @@ void BBcmCirCleL(int Speed, float Kp, float Kd, int distance) {
 
 void BBcmCirCleL(int Speed, float Kp, float Kd, int distance, char select) {
   BBcmCirCleL(Speed, Kp, Kd, distance);
+  TrackSelectB(Speed, select);
+}
+
+void BBcmCirCleR(int Speed, int totalTime) {
+  int temp_position = set_position;
+  set_position = set_position_r;
+  BBcm(Speed, totalTime);
+  set_position = temp_position;
+}
+
+void BBcmCirCleR(int Speed, int totalTime, char select) {
+  BBcmCirCleR(Speed, totalTime);
   TrackSelectB(Speed, select);
 }
 
@@ -2228,6 +2246,7 @@ void BBcmCirCleR(int Speed, float Kp, float Kd, int distance, char select) {
 //  13) ออกตัว / เข้าเส้นชัย
 // =====================================================================
 
+//  13) ออกตัว / เข้าเส้นชัย
 void GoStart(int LeftSpeed, int RightSpeed) {
   Move(LeftSpeed, RightSpeed, 100);
   while (1) {
@@ -2268,6 +2287,7 @@ void GoEnd(int Speed) {
 //  14) ปรับสมดุลหุ่นยนต์ (Balance)
 // =====================================================================
 
+//  14) ปรับสมดุลหุ่นยนต์ (Balance)
 void BalanceF(int Counter) {
   Move(-10, -10, 50);
   for (int i = 0; i <= Counter; i++) {
@@ -2421,6 +2441,7 @@ void BalanceBC(int Counter) {
 //  15) Serial Debug
 // =====================================================================
 
+//  15) Serial Debug
 void SerialPositionF() {
   while (1) {
     int pos = readPositionF(200, 50);

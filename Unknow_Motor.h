@@ -4,9 +4,10 @@
  *  สารบัญ
  *     1) ขามอเตอร์
  *     2) ตัวแปร (Global Variables)
- *     3) index ช่วงความเร็ว (SPD_10 .. SPD_100)
- *     4) สั่งมอเตอร์
- *     5) ตั้งค่าตามช่วงความเร็ว
+ *     3) ประกาศล่วงหน้า (Prototype)
+ *     4) index ช่วงความเร็ว (SPD_10 .. SPD_100)
+ *     5) สั่งมอเตอร์
+ *     6) ตั้งค่าตามช่วงความเร็ว
  * ===================================================================== */
 
 #ifndef UNKNOW_MOTOR_H
@@ -19,6 +20,7 @@
 //  1) ขามอเตอร์
 // =====================================================================
 
+//  1) ขามอเตอร์
 #define PH1 22
 #define EN1 21
 #define PH2 25
@@ -29,20 +31,27 @@
 //  2) ตัวแปร (Global Variables)
 // =====================================================================
 
+// ---------- ชดเชยมอเตอร์ / ความเร็วฐาน ----------
+//  2) ตัวแปร (Global Variables)
+
 // ชนิดตัวแปร: ความเร็ว -100..100 = int8_t | ค่าที่บวก/ลบกันแล้วอาจเกิน ±127 = int16_t | เวลา ms = uint16_t
 int8_t BalanceMotorLeft, BalanceMotorRight;
 int8_t BaseSpeed;
 int16_t LeftBaseSpeed, RightBaseSpeed, BackLeftBaseSpeed, BackRightBaseSpeed;  // BaseSpeed - ค่า balance
+
+// ---------- PID ตามช่วงความเร็ว ----------
 float PID_KP_Front, PID_KD_Front;
 float PID_KP_Back, PID_KD_Back;
-
-int16_t LastError_F, LastError_B;  // ค่า error ก่อนหน้าของ PIDF / PIDB (รีเซ็ตใน InitialSpeed) ช่วง ±15000
-int16_t LastError_F_none, LastError_B_none;  // ค่า error ก่อนหน้าของ PID แบบ _none
-void resetGyroRunError();      // อยู่ใน Unknow_IMU.h: รีเซ็ต previous_errorG / previous_errorGB
-int8_t L[10], R[10];
-int8_t BL[10], BR[10];
 float KP[10], KD[10];
 float KP_Back[10], KD_Back[10];
+
+// ---------- error ก่อนหน้าของ PID (รีเซ็ตใน InitialSpeed) ----------
+int16_t LastError_F, LastError_B;            // ค่า error ก่อนหน้าของ PIDF / PIDB (รีเซ็ตใน InitialSpeed) ช่วง ±15000
+int16_t LastError_F_none, LastError_B_none;  // ค่า error ก่อนหน้าของ PID แบบ _none
+
+// ---------- ตาราง balance / เวลาเบรก ----------
+int8_t L[10], R[10];
+int8_t BL[10], BR[10];
 uint16_t delay_break_f = 30;
 uint16_t delay_break_b = 30;
 uint16_t delay_break_f_table[10] = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
@@ -50,8 +59,17 @@ uint16_t delay_break_b_table[10] = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
 
 
 // =====================================================================
-//  3) index ช่วงความเร็ว (SPD_10 .. SPD_100)
+//  3) ประกาศล่วงหน้า (Prototype)
 // =====================================================================
+
+void resetGyroRunError();  // อยู่ใน Unknow_IMU.h: รีเซ็ต previous_errorG / previous_errorGB
+
+
+// =====================================================================
+//  4) index ช่วงความเร็ว (SPD_10 .. SPD_100)
+// =====================================================================
+
+//  3) index ช่วงความเร็ว (SPD_10 .. SPD_100)
 
 // กำหนด index ความเร็ว
 #define SPD_10 0
@@ -67,9 +85,10 @@ uint16_t delay_break_b_table[10] = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
 
 
 // =====================================================================
-//  4) สั่งมอเตอร์
+//  5) สั่งมอเตอร์
 // =====================================================================
 
+//  4) สั่งมอเตอร์
 void Motor1(int Pow) {
   analogWriteResolution(12);
   analogWriteFreq(20000);
@@ -126,9 +145,10 @@ void TestMotor() {
 
 
 // =====================================================================
-//  5) ตั้งค่าตามช่วงความเร็ว
+//  6) ตั้งค่าตามช่วงความเร็ว
 // =====================================================================
 
+//  5) ตั้งค่าตามช่วงความเร็ว
 void setBalanceSpeed(int ch, int spdL, int spdR) {
   L[ch] = spdL;
   R[ch] = spdR;
