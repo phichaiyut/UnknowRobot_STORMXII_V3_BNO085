@@ -17,18 +17,27 @@ void setup_robot() {
   // หุ่นเดินเกินระยะ ให้เพิ่มค่า | หุ่นเดินไม่ถึงระยะ ให้ลดค่า
   set_speed_scale(1.5, 1.5);  // (เดินหน้า, ถอยหลัง)
 
+  /******************** LINE ALIGN (LF / LB) ********************/
+  set_pid_lf(0.015, 0.10);  // PID อยู่กับที่ จัดตัวตรงเส้น LF (Kp, Kd)
+  set_pid_lb(0.015, 0.10);  // PID อยู่กับที่ จัดตัวตรงเส้น LB (Kp, Kd)
+
+  set_pid_mode2_limit(20, 20);  // ModeSpdPID โหมด 2: กำลังล้อ -(Speed+ถอย)..(Speed+เร่ง) (เร่ง, ถอย)
+
   /******************** GYRO SPEED MODE ********************/
   // เลือกเปิดใช้ทีละบรรทัด (mode, max, min)
   // ModeSpdGyro(0, 100, -10);  // 0 = ..max         ล้อติดลบ → min
   // ModeSpdGyro(1, 100, -100); // 1 = min..max
-  // ModeSpdGyro(2, 100, -10);  // 2 = -(Speed+20)..Speed+20 ถอยล้อได้เต็มที่
+  // ModeSpdGyro(2, 100, -10);  // 2 = -(Speed+ถอย)..Speed+เร่ง ถอยล้อได้เต็มที่
   // ModeSpdGyro(3, 100, -10);  // 3 = ..max         ล้อติดลบ → -Speed
-  ModeSpdGyro(4, 100, -5);  // 4 = ..Speed+20    ล้อติดลบ → min (ใส่ min = 0 คือไม่ถอยล้อ)
+  ModeSpdGyro(4, 100, -5);  // 4 = ..Speed+เร่ง    ล้อติดลบ → min (ใส่ min = 0 คือไม่ถอยล้อ)
   // ModeSpdGyro(2, 4, 100, -5);  // แยกโหมด (เดินหน้า, ถอยหลัง, max, min)
+  set_gyro_mode2_limit(20, 20);  // โหมด 2: -(Speed+ถอย)..(Speed+เร่ง) (เร่ง, ถอย)
+  set_gyro_mode4_limit(20);      // โหมด 4: ..(Speed+เร่ง) (เร่ง)
 
   /******************** GYRO PID CONFIG ********************/
   // (kp, kd, maxSpd, minSpd, smallAngle, stopThr)
-  SetGyroTurn(1.3, 0.8, 65, 20, 15.0, 1.0);  // เลี้ยวล้อเดียวด้วยไจโร (turnDegree / turnDegreeB)
+  SetGyroTurn(1.3, 0.8, 65, 20, 15.0, 1.0);   // เลี้ยวล้อเดียวเดินหน้าด้วยไจโร (turnDegree)
+  SetGyroTurnB(1.3, 0.8, 65, 20, 15.0, 1.0);  // เลี้ยวล้อเดียวถอยหลังด้วยไจโร (turnDegreeB)
   SetGyroSpin(1.3, 0.8, 65, 20, 15.0, 1.0);  // หมุนตัวอยู่กับที่ด้วยไจโร (spinDegree)
   // (kp, kd)
   SetGyroRun(0.25, 2.5);   // เดินหน้าตรงด้วยไจโร (RunG)
