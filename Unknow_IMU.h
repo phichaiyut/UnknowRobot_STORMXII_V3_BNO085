@@ -263,7 +263,7 @@ void HoldAngleB() {
   float d = error - prevErrHoldB;
   int power = (error * kpBHold) + (d * kdBHold);
   power = constrain(power, -50, 50);  // แรงหมุน
-  Motor(power, -power);               // หมุนอยู่กับที่
+  Motor(-power, power);               // หมุนอยู่กับที่ (error กลับด้าน จึงสลับล้อ ให้หมุนแก้ทางเดียวกับ HoldAngle)
   prevErrHoldB = error;
 }
 
