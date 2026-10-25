@@ -38,7 +38,7 @@ void setup_robot() {
   // (kp, kd, maxSpd, minSpd, smallAngle, stopThr)
   SetGyroTurn(1.3, 0.8, 65, 20, 15.0, 1.0);   // เลี้ยวล้อเดียวเดินหน้าด้วยไจโร (turnDegree)
   SetGyroTurnB(1.3, 0.8, 65, 20, 15.0, 1.0);  // เลี้ยวล้อเดียวถอยหลังด้วยไจโร (turnDegreeB)
-  SetGyroSpin(1.3, 0.8, 65, 20, 15.0, 1.0);  // หมุนตัวอยู่กับที่ด้วยไจโร (spinDegree)
+  SetGyroSpin(1.3, 0.8, 65, 20, 15.0, 1.0);   // หมุนตัวอยู่กับที่ด้วยไจโร (spinDegree)
   // (kp, kd)
   SetGyroRun(0.25, 2.5);   // เดินหน้าตรงด้วยไจโร (RunG)
   SetGyroRunB(0.25, 2.5);  // ถอยหลังตรงด้วยไจโร (RunGB)
