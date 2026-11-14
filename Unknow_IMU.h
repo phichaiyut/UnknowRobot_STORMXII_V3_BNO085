@@ -78,6 +78,14 @@ int8_t gyro_MaxSpd_TurnB = 50;
 int8_t gyro_MinSpd_TurnB = 10;
 float gyro_SmallAngle_TurnB = 10.0f;
 float gyro_StopThr_TurnB = 1.0f;
+
+// ---------- วิ่งโค้งกำหนดล้อเอง (rotateDegree / rotateDir) — ปรับได้ด้วย SetGyroRotate ----------
+// ช่วงชะลอ: scale = kp × (มุมที่เหลือ + kd × อัตราเข้าหาเป้า[องศา/10ms]) / smallAngle
+//   kp > 1 = ชะลอช้าลง (เข้าเร็ว) | kd = มองล่วงหน้ากี่ × 10ms (หมุนเลยมุม → เพิ่ม kd)
+float gyro_Kp_Rotate = 1.0f;
+float gyro_Kd_Rotate = 2.0f;
+int8_t gyro_MinSpd_Rotate = 15;        // ล้อที่เร็วกว่าไม่ต่ำกว่านี้ตอนชะลอ
+float gyro_SmallAngle_Rotate = 25.0f;  // เหลือน้อยกว่านี้ (องศา) เริ่มชะลอ
 float gyro_StopThr_Rotate = 1.0f;
 
 // ---------- วิ่งตรง — ปรับได้ด้วย SetGyroRun / SetGyroRunB / ModeSpdGyro ใน Setting.ino ----------
@@ -120,6 +128,9 @@ int8_t gyro_BounceSpd_turn = 12;
 uint16_t gyro_BounceMs_turn = 5;
 int8_t gyro_BounceSpd_turn_b = 12;
 uint16_t gyro_BounceMs_turn_b = 5;
+uint16_t brake_rotate_g = 20;     // rotateDegree / rotateDir: เวลาล็อกมุม (SetG) หลังเบรก
+int8_t gyro_BounceSpd_rotate = 15;  // เบรกสวนทิศล้อ (ล้อที่เร็วกว่า = ค่านี้ ล้อช้ากว่าลดตามสัดส่วน)
+uint16_t gyro_BounceMs_rotate = 10;
 
 // ---------- วิ่งตามเส้นจนถึงทิศ (FFdir / BBdir) ----------
 float line_dir_threshold = 5.0f;  // ถือว่าถึงทิศเมื่อ |error| <= ค่านี้ (องศา)
@@ -406,6 +417,15 @@ void SetGyroSpin(float kp, float kd, int maxSpd, int minSpd, float smallAngle, f
   gyro_StopThr_Spin = stopThr;
 }
 
+// rotateDegree / rotateDir (วิ่งโค้งกำหนดล้อเอง) — ไม่มี maxSpd เพราะใช้ SpeedL / SpeedR ที่สั่ง
+void SetGyroRotate(float kp, float kd, int minSpd, float smallAngle, float stopThr) {
+  gyro_Kp_Rotate = kp;
+  gyro_Kd_Rotate = kd;
+  gyro_MinSpd_Rotate = minSpd;
+  gyro_SmallAngle_Rotate = smallAngle;
+  gyro_StopThr_Rotate = stopThr;
+}
+
 void SetGyroRun(float kp, float kd) {
   kpG = kp;
   kdG = kd;
@@ -490,6 +510,15 @@ void set_brake_turn_b_gyro_setg(int brake) {
 void set_brake_turn_b_gyro(int spd, int t) {
   gyro_BounceSpd_turn_b = spd;
   gyro_BounceMs_turn_b = t;
+}
+
+void set_brake_rotate_gyro_setg(int brake) {
+  brake_rotate_g = brake;
+}
+
+void set_brake_rotate_gyro(int spd, int t) {
+  gyro_BounceSpd_rotate = spd;
+  gyro_BounceMs_rotate = t;
 }
 
 // ---------- วิ่งตามเส้นจนถึงทิศ (FFdir / BBdir) ----------
@@ -739,36 +768,125 @@ void turnDegreeb_none(int relative_degree) {
   turnDegreeb_none(gyro_MaxSpd_TurnB, relative_degree);
 }
 
-// ---------- โค้งด้วยความเร็วล้อซ้าย / ขวา (rotateDegree) ----------
-void rotateDegree(int SpeedL, int SpeedR, int relative_degree, float kp, float kd) {
-  float stop_threshold = gyro_StopThr_Rotate;
-  float previous_error = 0;
-  // float target_degree = current_degree + relative_degree;
-  float target_degree = angleReadFresh() + relative_degree;
-  if (target_degree > 180) target_degree -= 360;
-  if (target_degree < -180) target_degree += 360;
-  current_degree = target_degree;
-  while (1) {
-    float error = target_degree - angleRead();
-    if (error > 180) error -= 360;
-    else if (error < -180) error += 360;
-    if (error >= -stop_threshold && error <= stop_threshold) {
-      MotorStop();
-      break;
-    }
-    float derivative = error - previous_error;
-    int pd_value = (error * kp) + (derivative * kd);
-    int leftPow = constrain(SpeedL + pd_value, -100, 100);
-    int rightPow = constrain(SpeedR - pd_value, -100, 100);
-    Motor(leftPow, rightPow);
-    previous_error = error;
-    delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นหมุนช้าลงและลดการสั่น
+// ---------- โค้งด้วยความเร็วล้อซ้าย / ขวา (rotateDegree) — Ratio-Preserving Arc ----------
+// ทิศหมุนกำหนดจากความเร็วล้อเสมอ (ใช้ได้ทั้งโค้งเดินหน้า / ถอยหลัง / หมุนเยื้องศูนย์):
+//   SpeedL > SpeedR → มุมเพิ่ม (ขวา) | SpeedL < SpeedR → มุมลด (ซ้าย) | เท่ากัน = ไม่เลี้ยว → ข้าม
+// ช่วงไกล: สั่ง (SpeedL, SpeedR) ตรงตามผู้ใช้ 100% → รัศมีโค้งตรง
+// ช่วงชะลอ (มุมที่เหลือ < gyro_SmallAngle_Rotate): สั่ง (SpeedL × scale, SpeedR × scale) สัดส่วนล้อเท่าเดิม
+//   scale = kp × (มุมที่เหลือ + kd × อัตราเข้าหาเป้า[องศา/10ms]) / gyro_SmallAngle_Rotate
+//   ล้อที่เร็วกว่าไม่ต่ำกว่า gyro_MinSpd_Rotate | คำนวณเฉพาะตอนมีมุมใหม่จาก IMU
+// หยุดเมื่อ |error| <= gyro_StopThr_Rotate หรือข้ามเป้า (error เปลี่ยนเครื่องหมายตอน |error| < 90)
+// brake = true: เบรกสวนทิศล้อตามสัดส่วน → MotorStop() → ล็อกมุม SetG(brake_rotate_g)
+// brake = false: ไม่ชะลอ ไม่เบรก มอเตอร์ยังวิ่ง (SpeedL, SpeedR) ต่อ → ต่อคำสั่งถัดไปลื่น
+// ต้องเรียก angleReadFresh() มาก่อน (lastYaw สด)
+// คืน false = ไม่ได้วิ่ง (ล้อเท่ากัน) หรือ IMU ไม่ส่งมุมเกิน 500ms (หยุดมอเตอร์แล้ว)
+static bool rotateArc(int SpeedL, int SpeedR, float target_degree, bool brake, float kp, float kd) {
+  SpeedL = constrain(SpeedL, -100, 100);
+  SpeedR = constrain(SpeedR, -100, 100);
+  if (SpeedL == SpeedR) {
+    Serial.println("rotate: SpeedL == SpeedR -> no turning, skipped");
+    Beep(100);
+    return false;
   }
-  SetG(max(abs(SpeedL), abs(SpeedR)));
+  const int rot_sign = (SpeedL > SpeedR) ? 1 : -1;  // ทิศที่ล้อพาหุ่นหมุนจริง
+  const int maxAbs = max(abs(SpeedL), abs(SpeedR));
+  const float minScale = (maxAbs > gyro_MinSpd_Rotate) ? (float)gyro_MinSpd_Rotate / (float)maxAbs : 1.0f;
+  const float small_angle = (gyro_SmallAngle_Rotate > 1.0f) ? gyro_SmallAngle_Rotate : 1.0f;
+  const float stop_threshold = gyro_StopThr_Rotate;
+
+  target_degree = wrap180(target_degree);
+  current_degree = target_degree;
+  float prev_error = wrap180(target_degree - lastYaw);  // เริ่มจาก error จริง (ไม่ใช่ 0) กัน crossed / D กระชาก
+  bool first = true;
+  uint32_t lastFreshUs = micros();
+  int cmdL = SpeedL, cmdR = SpeedR;
+  Motor(cmdL, cmdR);
+
+  while (1) {
+    // ทำงานเฉพาะตอนมีมุมใหม่จาก IMU (ระหว่างรอ คงคำสั่งมอเตอร์เดิม)
+    if (!(myIMU.getSensorEvent() && myIMU.getSensorEventID() == SENSOR_REPORTID_ROTATION_VECTOR)) {
+      if (micros() - lastFreshUs > 500000UL) {  // IMU หลุด → หยุด กันหมุนไม่รู้จบ
+        Serial.println("rotate: IMU timeout");
+        MotorStop();
+        return false;
+      }
+      continue;
+    }
+    updateYawFromEvent();
+    uint32_t nowUs = micros();
+    uint32_t dtUs = nowUs - lastFreshUs;
+    lastFreshUs = nowUs;
+
+    float error = wrap180(target_degree - lastYaw);
+    // D = การเปลี่ยน error ต่อ 10ms (รอบแรก = 0)
+    float d = (first || dtUs == 0) ? 0.0f : (error - prev_error) * 10000.0f / (float)dtUs;
+    first = false;
+
+    bool crossed = fabsf(error) < 90.0f && ((error > 0.0f && prev_error < 0.0f) || (error < 0.0f && prev_error > 0.0f));
+    prev_error = error;
+    if (crossed || fabsf(error) <= stop_threshold) break;
+
+    // rem = มุมที่เหลือตามทิศที่ล้อพาหมุน (+ = เป้ายังอยู่ข้างหน้า, - = อีกฝั่ง ต้องหมุนอีกไกล)
+    float rem = error * rot_sign;
+    float scale = 1.0f;
+    if (brake && rem > 0.0f && rem < small_angle) {
+      float rem_pred = rem + kd * d * rot_sign;  // d × rot_sign < 0 = กำลังเข้าหาเป้า
+      scale = constrain(kp * rem_pred / small_angle, minScale, 1.0f);
+    }
+    cmdL = (int)lroundf(SpeedL * scale);
+    cmdR = (int)lroundf(SpeedR * scale);
+    Motor(cmdL, cmdR);
+  }
+
+  if (!brake) {
+    resetGyroRunError();  // RunG / FFcmG ถัดไปล็อกทิศ target ต่อโดย D ไม่กระชาก
+    return true;
+  }
+  // เบรกสวนทิศที่ล้อแต่ละข้างกำลังหมุนจริง ตามสัดส่วนเดิม (ล้อเร็วกว่า = gyro_BounceSpd_rotate)
+  int cmdMax = max(abs(cmdL), abs(cmdR));
+  if (cmdMax > 0 && gyro_BounceSpd_rotate > 0 && gyro_BounceMs_rotate > 0) {
+    int bL = -(int)lroundf((float)gyro_BounceSpd_rotate * cmdL / cmdMax);
+    int bR = -(int)lroundf((float)gyro_BounceSpd_rotate * cmdR / cmdMax);
+    Motor(bL, bR);
+    delay(gyro_BounceMs_rotate);
+  }
+  MotorStop();
+  SetG(brake_rotate_g);
+  resetGyroRunError();
+  return true;
+}
+
+// เครื่องหมายมุมตั้งอัตโนมัติจากล้อ: SpeedL > SpeedR → +|deg|, SpeedL < SpeedR → -|deg|
+// จำกัดไม่เกิน 360 - 3 × stopThr (≈ 357) ไม่งั้นเป้าห่างจากมุมเริ่มไม่ถึง stopThr → หยุดทันทีไม่ได้หมุน
+static float rotateRelTarget(int SpeedL, int SpeedR, int relative_degree) {
+  float maxDeg = 360.0f - 3.0f * gyro_StopThr_Rotate;
+  float deg = (float)abs(relative_degree);
+  if (deg > maxDeg) deg = maxDeg;
+  if (SpeedL < SpeedR) deg = -deg;
+  angleReadFresh();
+  return wrap180(lastYaw + deg);
+}
+
+// kp / kd = ค่าชะลอเฉพาะครั้งนี้ (ความหมายดู gyro_Kp_Rotate / gyro_Kd_Rotate)
+void rotateDegree(int SpeedL, int SpeedR, int relative_degree, float kp, float kd) {
+  if (SpeedL == SpeedR) {
+    rotateArc(SpeedL, SpeedR, 0, true, kp, kd);  // แจ้งเตือนแล้วออก
+    return;
+  }
+  rotateArc(SpeedL, SpeedR, rotateRelTarget(SpeedL, SpeedR, relative_degree), true, kp, kd);
 }
 
 void rotateDegree(int SpeedL, int SpeedR, int relative_degree) {
-  rotateDegree(SpeedL, SpeedR, relative_degree, 0.9, 0.6);
+  rotateDegree(SpeedL, SpeedR, relative_degree, gyro_Kp_Rotate, gyro_Kd_Rotate);
+}
+
+// ไม่ชะลอ ไม่เบรก: ถึงมุมแล้วมอเตอร์ยังวิ่ง (SpeedL, SpeedR) ต่อ → ต่อโค้งตัว S / วิ่งตรงต่อลื่น
+void rotateDegree_none(int SpeedL, int SpeedR, int relative_degree) {
+  if (SpeedL == SpeedR) {
+    rotateArc(SpeedL, SpeedR, 0, false, gyro_Kp_Rotate, gyro_Kd_Rotate);
+    return;
+  }
+  rotateArc(SpeedL, SpeedR, rotateRelTarget(SpeedL, SpeedR, relative_degree), false, gyro_Kp_Rotate, gyro_Kd_Rotate);
 }
 
 
@@ -1002,6 +1120,67 @@ void SetDirectionG(int direction) {
   else if (target < -180) target += 360;
   current_degree = target;
   resetGyroRunError();
+}
+
+// ---------- วิ่งโค้งกำหนดล้อเอง เข้าหาทิศ (ลอจิกเดียวกับ rotateDegree) ----------
+// rotateDir(SpeedL, SpeedR, dir): ตีโค้งตามสัดส่วนล้อจนหัวหุ่นหันทิศ dir แล้วเบรกหยุด
+// ทางสั้นที่สุด: ถ้าทิศเป้าอยู่คนละฝั่งกับที่ล้อพาเลี้ยว → สลับล้อ L ↔ R ให้ (โค้งกระจกเงา
+//   รัศมีเท่าเดิม เดินหน้า / ถอยหลังเหมือนเดิม) | เป้าอยู่ข้างหลังพอดี (|error| > 175°) ใช้ทิศเดิม
+void TrackSelectG(int spd, char select);  // ตัวจริงอยู่ในหัวข้อ 10
+void TrackSelectGB(int spd, char select);
+
+static bool rotateDirArc(int SpeedL, int SpeedR, int direction, bool brake) {
+  if (SpeedL == SpeedR) return rotateArc(SpeedL, SpeedR, 0, brake, gyro_Kp_Rotate, gyro_Kd_Rotate);
+  float target_degree = wrap180(fmod((float)direction, 360.0f));
+  angleReadFresh();
+  float error = wrap180(target_degree - lastYaw);
+  int rot_sign = (SpeedL > SpeedR) ? 1 : -1;
+  if (fabsf(error) > gyro_StopThr_Rotate && fabsf(error) <= 175.0f && error * rot_sign < 0.0f) {
+    int t = SpeedL;  // สลับล้อ → หมุนกลับฝั่ง เข้าเป้าทางสั้น
+    SpeedL = SpeedR;
+    SpeedR = t;
+  }
+  return rotateArc(SpeedL, SpeedR, target_degree, brake, gyro_Kp_Rotate, gyro_Kd_Rotate);
+}
+
+void rotateDir(int SpeedL, int SpeedR, int direction) {
+  rotateDirArc(SpeedL, SpeedR, direction, true);
+}
+
+// ไม่ชะลอ ไม่เบรก ถึงทิศแล้วมอเตอร์ยังวิ่งต่อ
+void rotateDir_none(int SpeedL, int SpeedR, int direction) {
+  rotateDirArc(SpeedL, SpeedR, direction, false);
+}
+
+// ถึงทิศแล้วทำ select ต่อ:
+//   'n' / 0 = ไหลต่อ ไม่เบรก | 'f' = เบรกสวนสั้น ๆ แล้ว SetFG (โค้งถอยหลัง = SetBG) แรง / เวลาคิดจากความเร็ว
+//   อื่น ๆ  = TrackSelectG (โค้งถอยหลัง = TrackSelectGB) ด้วยความเร็ว = ล้อที่เร็วกว่า
+// "ถอยหลัง" = SpeedL + SpeedR < 0 | หมุนอยู่กับที่ล้วน (SpeedL + SpeedR = 0) + 'f' = เบรกแบบ rotateDir
+void rotateDir(int SpeedL, int SpeedR, char select, int direction) {
+  int sum = SpeedL + SpeedR;
+  if (select == 'f' && sum == 0) {
+    rotateDir(SpeedL, SpeedR, direction);
+    return;
+  }
+  if (!rotateDirArc(SpeedL, SpeedR, direction, false)) return;  // ล้อเท่ากัน / IMU หลุด
+  if (select == 'n' || select == 0) return;
+  bool backward = sum < 0;
+  int spd = max(abs(SpeedL), abs(SpeedR));
+  if (select == 'f') {
+    int bs = constrain(spd / 2, 15, 60);
+    int bm = constrain(10 + spd / 3, 20, 50);
+    Motor(backward ? bs : -bs, backward ? bs : -bs);  // เบรกสวนทิศวิ่ง
+    delay(bm);
+    MotorStop();
+    if (backward) SetBG(60);
+    else SetFG(60);
+    // SetFG / SetBG จำมุมตอนเบรก (อาจเลยเป้ามานิด) → ให้ RunG / FFcmG ถัดไปล็อกทิศ direction จริง
+    current_degree = wrap180(fmod((float)direction, 360.0f));
+    resetGyroRunError();
+    return;
+  }
+  if (backward) TrackSelectGB(spd, select);
+  else TrackSelectG(spd, select);
 }
 
 

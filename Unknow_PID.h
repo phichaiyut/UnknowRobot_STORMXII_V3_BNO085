@@ -309,12 +309,13 @@ int readPositionB(int Track, int noise) {
   return last_value;
 }
 
-int readPositionF_none(int Track, int noise) {
+// คำนวณตำแหน่งจาก F[] ที่อ่าน+คาลิเบรตแล้ว (ไม่อ่านเซนเซอร์ซ้ำ) — ใช้ร่วมกันโดย
+// readPositionF_none() และ PIDF_none() (เดิม PIDF_none อ่านเซนเซอร์สองรอบต่อ 1 ลูป)
+static int calcPositionF_none(int Track, int noise) {
   unsigned char i, online = 0;
   unsigned long avg = 0;
   unsigned long sum = 0;
   static int16_t last_value = (NUM_SENSORS - 1) * 1000 / 2;
-  ReadCalibrateF();
   for (i = setsensortracklineL; i < setsensortracklineR; i++) {
     int values = F[i];
     if (values > Track) online = 1;
@@ -333,12 +334,17 @@ int readPositionF_none(int Track, int noise) {
   return last_value;
 }
 
-int readPositionB_none(int Track, int noise) {
+int readPositionF_none(int Track, int noise) {
+  ReadCalibrateF();
+  return calcPositionF_none(Track, noise);
+}
+
+// เหมือน calcPositionF_none แต่ใช้ B[]
+static int calcPositionB_none(int Track, int noise) {
   unsigned char i, online = 0;
   unsigned long avg = 0;
   unsigned long sum = 0;
   static int16_t last_value = (NUM_SENSORS - 1) * 1000 / 2;
-  ReadCalibrateB();
   for (i = setsensortracklineL; i < setsensortracklineR; i++) {
     int values = B[i];
     if (values > Track) online = 1;
@@ -355,6 +361,11 @@ int readPositionB_none(int Track, int noise) {
   }
   last_value = avg / sum;
   return last_value;
+}
+
+int readPositionB_none(int Track, int noise) {
+  ReadCalibrateB();
+  return calcPositionB_none(Track, noise);
 }
 
 
@@ -423,11 +434,11 @@ void PIDB(int SpeedL, int SpeedR, float Kp, float Kd) {
 
 void PIDF_none(int SpeedL, int SpeedR, float Kp, float Kd) {
   int Pos;
-  ReadCalibrateF();
+  ReadCalibrateF();  // อ่านครั้งเดียว ใช้ทั้งเช็กเส้นกลางและคำนวณตำแหน่ง
   if (F[7] > Ref && F[8] > Ref) {
     Pos = 7500;
   } else {
-    Pos = readPositionF_none(250, 50);
+    Pos = calcPositionF_none(250, 50);
   }
   // int Pos      = readPositionF_none(250, 50);
   int Error = Pos - set_position;
@@ -445,11 +456,11 @@ void PIDF_none(int SpeedL, int SpeedR, float Kp, float Kd) {
 
 void PIDB_none(int SpeedL, int SpeedR, float Kp, float Kd) {
   int Pos;
-  ReadCalibrateB();
+  ReadCalibrateB();  // อ่านครั้งเดียว ใช้ทั้งเช็กเส้นกลางและคำนวณตำแหน่ง
   if (B[7] > Ref && B[8] > Ref) {
     Pos = 7500;
   } else {
-    Pos = readPositionB_none(250, 50);
+    Pos = calcPositionB_none(250, 50);
   }
   // int Pos      = readPositionB_none(250, 50);
   int Error = Pos - set_position;
@@ -1337,10 +1348,10 @@ void TrackSelectB(int spd, char x) {
     TurnRightB();
     BBtimer(0, 5);
   } else if (x == 'g') {
-    SetFG(spd);
+    SetBG(spd);  // หลังถอยหลัง ใช้ค่า kp/kd ถอยหลัง (เดิมเรียก SetFG)
   } else if (x == 'G') {
     ToBack();
-    SetFG(spd);
+    SetBG(spd);  // หลังถอยหลัง ใช้ค่า kp/kd ถอยหลัง (เดิมเรียก SetFG)
   } else {
     MotorStop();
   }

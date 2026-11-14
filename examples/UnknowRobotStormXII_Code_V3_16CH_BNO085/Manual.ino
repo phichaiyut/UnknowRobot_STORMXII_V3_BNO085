@@ -305,8 +305,15 @@
 // TurnRLBG(...);   // ถอยหลัง ขวาก่อน แล้วสวนซ้าย
 //
 // ---------- ตีโค้งกำหนดความเร็วล้อเอง (arc) — คุมรัศมีโค้งเอง หมุนจนถึงองศาแล้วเบรก ----------
-// rotateDegree(speedL, speedR, deg);           // ใช้ kp, kd มาตรฐาน (0.9, 0.6)
-// rotateDegree(speedL, speedR, deg, kp, kd);   // กำหนด kp, kd เอง
+// ทิศหมุนตั้งจากล้อเอง: speedL > speedR = เลี้ยวขวา, speedL < speedR = เลี้ยวซ้าย (deg ใส่เป็นบวก)
+// รัศมีโค้งคงที่ตลอด: ใกล้ถึงมุมจะลดความเร็วทั้งสองล้อตามสัดส่วนเดิม แล้วเบรกสวน + ล็อกมุม
+// rotateDegree(speedL, speedR, deg);           // ใช้ค่าชะลอจาก SetGyroRotate (หมวด 8.6)
+// rotateDegree(speedL, speedR, deg, kp, kd);   // กำหนดค่าชะลอเฉพาะครั้งนี้
+// rotateDegree_none(speedL, speedR, deg);      // ไม่ชะลอ ไม่เบรก ถึงมุมแล้วล้อยังวิ่งต่อ → ต่อโค้งตัว S / วิ่งตรงต่อ
+//   rotateDegree(60, 20, 90);     // โค้งเดินหน้าเลี้ยวขวา 90°
+//   rotateDegree(-60, -20, 90);   // โค้งถอยหลัง ล้อซ้ายถอยเร็วกว่า → หัวหุ่นหันซ้าย 90°
+//   rotateDegree(50, -25, 180);   // หมุนเยื้องศูนย์ขวา 180°
+//   rotateDegree_none(60, 30, 45);  rotateDegree_none(30, 60, 45);  FFcmG(60, 20);   // ตัว S แล้ววิ่งตรงต่อ
 //
 // ตัวอย่าง:
 //   turnDegree(90);            // เลี้ยวขวา 90 องศา
@@ -339,6 +346,10 @@
 // turnDirectionB(dir); / turnDirectionB(speed, dir);             // เลี้ยวถอยหลังล้อเดียวไปยังทิศ
 // turnDirection_none(dir); / turnDirection_none(speed, dir);     // เหมือน turnDirection แต่ไม่เบรก
 // turnDirectionb_none(dir); / turnDirectionb_none(speed, dir);   // เหมือน turnDirectionB แต่ไม่เบรก
+// rotateDir(speedL, speedR, dir);          // ตีโค้งสัดส่วนล้อจนหัวหุ่นหันทิศ dir แล้วเบรก + ล็อกมุม (ทิศผิดฝั่ง สลับล้อให้เอง)
+// rotateDir_none(speedL, speedR, dir);     // ถึงทิศแล้วไหลต่อ ไม่ชะลอ ไม่เบรก
+// rotateDir(speedL, speedR, 'r', dir);     // ถึงทิศแล้วทำ select: 'n' = ไหลต่อ, 'f' = เบรก + SetFG/SetBG,
+//                                          //   อื่น ๆ = TrackSelectG (โค้งถอยหลัง = TrackSelectGB)
 // SetDirectionG(dir);                                            // ตั้งทิศที่จะวิ่งตรงเข้าหา (หรือใส่ dir ต่อท้ายคำสั่งด้านล่างแทนได้)
 // ใส่ dir ต่อท้ายคำสั่งวิ่งตรงได้ (dir = ทิศที่หน้าหุ่นหัน ทั้งเดินหน้าและถอยหลัง):
 // FFtimerG(speed, ms, dir); / BBtimerG(speed, ms, dir);
@@ -377,6 +388,8 @@
 //     minSpd       ความเร็วต่ำสุดตอนใกล้ถึงเป้า (กันหุ่นค้างไม่ถึงองศา)
 //     smallAngle   เหลืออีกกี่องศาถึงเป้า จึงเริ่มลดความเร็ว
 //     stopThr      คลาดเคลื่อนได้กี่องศา ถือว่าถึงเป้า
+// SetGyroRotate(kp, kd, minSpd, smallAngle, stopThr);   // ตีโค้งกำหนดล้อเอง (rotateDegree / rotateDir)  ค่าเริ่มต้น (1.0, 2.0, 15, 25, 1.0)
+//     kp > 1 = ชะลอช้าลง (เข้าเร็ว) | kd = มองล่วงหน้า (หมุนเลยมุม ให้เพิ่ม kd)
 // SetGyroRun(kp, kd);                    // วิ่งตรงไปข้างหน้า (FFtimerG / FFcmG / FFBG / ToCenterG ...)
 // SetGyroRunB(kp, kd);                   // ถอยหลังตรง (BBtimerG / BBcmG / BBBG ...)
 // ModeSpdGyro(mode, max, min);           // โหมดจำกัดกำลังล้อตอนวิ่งตรง ใช้ทั้งเดินหน้า/ถอยหลัง
@@ -401,6 +414,8 @@
 // set_brake_turn_gyro(speed, ms);        // turnDegree: เบรกล้อที่เดินอยู่                    ค่าเริ่มต้น (12, 5)
 // set_brake_turn_b_gyro_setg(ms);        // turnDegreeB: เวลาล็อกมุมหลังเลี้ยวถอยหลังเสร็จ  ค่าเริ่มต้น 5
 // set_brake_turn_b_gyro(speed, ms);      // turnDegreeB: เบรกล้อที่ถอยอยู่                     ค่าเริ่มต้น (12, 5)
+// set_brake_rotate_gyro_setg(ms);        // rotateDegree / rotateDir: เวลาล็อกมุมหลังเบรก      ค่าเริ่มต้น 20
+// set_brake_rotate_gyro(speed, ms);      // rotateDegree / rotateDir: เบรกสวนตามสัดส่วนล้อ      ค่าเริ่มต้น (15, 10)
 //     หมุนเกินมุม ให้เพิ่ม speed / ms | เด้งกลับ ให้ลด | ใส่ 0 = ไม่เบรกสวน
 //
 // ตัวอย่าง:

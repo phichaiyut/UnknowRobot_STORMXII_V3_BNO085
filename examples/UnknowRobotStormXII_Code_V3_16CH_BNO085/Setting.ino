@@ -39,6 +39,7 @@ void setup_robot() {
   SetGyroTurn(1.3, 0.8, 65, 20, 15.0, 1.0);   // เลี้ยวล้อเดียวเดินหน้าด้วยไจโร (turnDegree)
   SetGyroTurnB(1.3, 0.8, 65, 20, 15.0, 1.0);  // เลี้ยวล้อเดียวถอยหลังด้วยไจโร (turnDegreeB)
   SetGyroSpin(1.3, 0.8, 65, 20, 15.0, 1.0);   // หมุนตัวอยู่กับที่ด้วยไจโร (spinDegree)
+  SetGyroRotate(1.0, 2.0, 15, 25.0, 1.0);     // ตีโค้งกำหนดล้อเอง (rotateDegree / rotateDir)
   // (kp, kd)
   SetGyroRun(0.25, 2.5);   // เดินหน้าตรงด้วยไจโร (RunG)
   SetGyroRunB(0.25, 2.5);  // ถอยหลังตรงด้วยไจโร (RunGB)
@@ -59,6 +60,8 @@ void setup_robot() {
   set_brake_turn_gyro(12, 5);      // turnDegree: เบรกล้อที่เดินอยู่ (ความเร็ว, ms)
   set_brake_turn_b_gyro_setg(10);  // turnDegreeB: เวลาล็อกมุมหลังเลี้ยวถอยหลังเสร็จ (ms)
   set_brake_turn_b_gyro(12, 5);    // turnDegreeB: เบรกล้อที่ถอยอยู่ (ความเร็ว, ms)
+  set_brake_rotate_gyro_setg(20);  // rotateDegree / rotateDir: เวลาล็อกมุมหลังเบรก (ms)
+  set_brake_rotate_gyro(15, 10);   // rotateDegree / rotateDir: เบรกสวนตามสัดส่วนล้อ (ความเร็ว, ms)
   //SerialCalibrate_AllSensor(); //โชว์ค่าคาลิเบท เซนเซอร์ทั้งหมด
   //SerialPositionFB();
 }
