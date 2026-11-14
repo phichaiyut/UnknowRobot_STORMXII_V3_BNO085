@@ -62,6 +62,9 @@ void setup_robot() {
   set_brake_turn_b_gyro(12, 5);    // turnDegreeB: เบรกล้อที่ถอยอยู่ (ความเร็ว, ms)
   set_brake_rotate_gyro_setg(20);  // rotateDegree / rotateDir: เวลาล็อกมุมหลังเบรก (ms)
   set_brake_rotate_gyro(15, 10);   // rotateDegree / rotateDir: เบรกสวนตามสัดส่วนล้อ (ความเร็ว, ms)
+  set_auto_align(20);              // คำสั่งวิ่งที่ใส่ทิศ: คลาดเกิน 20° หมุนตั้งลำก่อน (0 = ปิด)
+  set_track_snap90(true);          // ทางแยกไจโร: ปัดมุมเข้าแกน 90° ก่อนเลี้ยว (false = แบบเดิม)
+  set_line_dir_brake(0, 0);        // select 'f' ของ ffdir / ffdeg / ffdircl: แรง, ms (0 = คิดจากความเร็ว)
   //SerialCalibrate_AllSensor(); //โชว์ค่าคาลิเบท เซนเซอร์ทั้งหมด
   //SerialPositionFB();
 }

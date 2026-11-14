@@ -351,6 +351,33 @@
 // rotateDir(speedL, speedR, 'r', dir);     // ถึงทิศแล้วทำ select: 'n' = ไหลต่อ, 'f' = เบรก + SetFG/SetBG,
 //                                          //   อื่น ๆ = TrackSelectG (โค้งถอยหลัง = TrackSelectGB)
 // SetDirectionG(dir);                                            // ตั้งทิศที่จะวิ่งตรงเข้าหา (หรือใส่ dir ต่อท้ายคำสั่งด้านล่างแทนได้)
+//
+// --- ค่าคงที่ทิศ (ใช้แทนตัวเลขได้) ---
+// DIR_N = 0    DIR_NE = 45    DIR_E = 90    DIR_SE = 135
+// DIR_S = 180  DIR_SW = -135  DIR_W = -90   DIR_NW = -45
+//
+// --- ตั้งทิศอ้างอิง ---
+// resetAngles();                 // หุ่นหันทางไหนอยู่ = ทิศ 0 (DIR_N)
+// resetAnglesDir(dir);           // วางหุ่นหันทิศ dir แล้วรีเซ็ต เช่น resetAnglesDir(DIR_E);
+// setHeading(dir);               // ตั้งทิศหัวหุ่นที่ RunG / RunGB จะล็อก (ไม่หมุนตัว ใช้ก่อนวิ่ง)
+// RunG(L, R, dir);  RunGB(L, R, dir);   // 1 สเต็ปล็อกทิศ ใช้ใน loop เอง
+//
+// --- ชื่อย่อ หมุน / เลี้ยวเข้าหาทิศ ---
+// spindir([speed,] dir);   sdg([speed,] dir);    // = spinDirection
+// turndir([speed,] dir);   tdg([speed,] dir);    // = turnDirection
+// turndirb([speed,] dir);  tdbg([speed,] dir);   // = turnDirectionB
+// turndir_none([speed,] dir);  turndirb_none([speed,] dir);
+//
+// --- คอมโบ: หมุน / เลี้ยวเข้าทิศ แล้ววิ่งตามระยะต่อทันที (dir = ทิศที่หัวหุ่นหัน) ---
+// spin_ffcmg(speed, cm [, 'p'], dir);    spin_bbcmg(speed, cm [, 'p'], dir);    // spinDirection แล้ววิ่ง
+// turn_ffcmg(speed, cm [, 'p'], dir);    turn_bbcmg(speed, cm [, 'p'], dir);    // turnDirection แล้ววิ่ง
+// turnb_ffcmg(speed, cm [, 'p'], dir);   turnb_bbcmg(speed, cm [, 'p'], dir);   // turnDirectionB แล้ววิ่ง
+//
+// --- ตั้งลำอัตโนมัติ / ปัดมุมที่ทางแยก ---
+// set_auto_align(20);       // คำสั่งวิ่งที่ใส่ dir: หัวหุ่นคลาดเกิน 20° → หมุนตั้งลำก่อนวิ่ง (0 = ปิด) ค่าเริ่มต้น 20
+// set_track_snap90(true);   // เลี้ยวที่ทางแยกด้วยไจโร (FFBG / FFcmG(..., 'r') ...) ปัดมุมเข้าแกน 0/90/180/-90 ก่อน
+//                           // แล้วเลี้ยวไป "แกน ± 90" → มุมไม่เพี้ยนสะสมทีละแยก (false = เลี้ยวสัมพัทธ์แบบเดิม) ค่าเริ่มต้น true
+//                           // ⚠ สนามที่มีเส้นทแยง (เช่น หันทิศ 30° แล้วสั่ง 'r' จะไปทิศ 90 = เลี้ยวแค่ 60°) ให้ปิดด้วย false
 // ใส่ dir ต่อท้ายคำสั่งวิ่งตรงได้ (dir = ทิศที่หน้าหุ่นหัน ทั้งเดินหน้าและถอยหลัง):
 // FFtimerG(speed, ms, dir); / BBtimerG(speed, ms, dir);
 // FFcmG(speed, cm, dir); / BBcmG(speed, cm, dir);
@@ -367,6 +394,22 @@
 // FFdirCirCleL(speed, kp, [kd,] dir [, select]);                 // ...CirCleR / BBdirCirCleL / BBdirCirCleR แบบเดียวกัน
 // set_line_dir_threshold(5.0);              // ระยะยอมรับ (องศา) ค่าเริ่มต้น 5
 // ไม่ใส่ select = จบแล้วมอเตอร์ยังหมุนอยู่ ต่อคำสั่งถัดไปได้ทันที
+//
+// --- ชุดใหม่: select ไว้หน้า dir / องศาสัมพัทธ์ / เกาะโค้ง (dir = ทิศที่หัวหุ่นหัน ทั้ง ff และ bb) ---
+// ffdirg(speed, 'p', dir);    bbdirg(speed, 'p', dir);     // ตามเส้นจนถึงทิศ แล้ว TrackSelectG / GB
+// ffdirf(speed, dir, 'p');    bbdirb(speed, dir, 'p');     // ตามเส้นจนถึงทิศ แล้ว TrackSelectF / B
+// ffdeg(speed, [ 'p', ] deg);  bbdeg(speed, [ 'p', ] deg);  // ตามเส้นจนหมุนไป deg (+ = ขวา) นับจากตอนเริ่ม → TrackSelectF / B
+// ffdegg(speed, 'p', deg);    bbdegg(speed, 'p', deg);     // เหมือน ffdeg แต่จบด้วย TrackSelectG / GB
+// ffdircl / ffdircr(speed, [ 'p', ] dir);       bbdircl / bbdircr(...);      // เกาะโค้งซ้าย / ขวา จนถึงทิศ → TrackSelectF / B
+// ffdirclg / ffdircrg(speed, 'p', dir);         bbdirclg / bbdircrg(...);    // → TrackSelectG / GB
+// ffdegcl / ffdegcr / bbdegcl / bbdegcr(...)    ffdegclg / ffdegcrg / ...    // แบบองศาสัมพัทธ์
+// X(speed, kp, [kd,] 'p', dir|deg);             // กำหนด kp / kd เองได้ทุกตัวในชุด cl / cr (ไม่ต้องการ select ใส่ 'n')
+//   'p'  'n' = ไหลต่อ ไม่เบรก | 'f' = เบรกไจโรแล้วล็อกมุม | อื่น ๆ = TrackSelect
+// set_line_dir_brake(spd, ms [, hold]);         // แรง / เวลาเบรกของ 'f' (0, 0 = คิดจากความเร็ว) ค่าเริ่มต้น (0, 0, 60)
+// ตัวอย่าง:
+//   ffdircr(50, DIR_E);  FFcmG(60, 30, 's');   // เกาะโค้งขวาจนหันทิศ 90 แล้ววิ่งตรงต่อ 30 cm หยุด
+//   ffdirg(50, 'r', DIR_E);                    // ตามเส้นจนหันทิศ 90 แล้วหมุนขวาด้วยไจโร (snap90)
+//   ffdeg(60, 'f', 180);                       // ตามโค้งตัวยูจนหมุนครบ 180° แล้วเบรกไจโร
 //
 // ตัวอย่าง: เริ่มหันทิศ 0 → หมุนไปทิศ 90 → วิ่งตรงไปทิศ 180 อีก 80 ซม.
 //   resetAngle();
