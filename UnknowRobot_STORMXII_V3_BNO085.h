@@ -43,6 +43,7 @@ void CalibrateSensor();
 
 void RobotSetup() {
   Serial.begin(115200);
+  BuzzerBegin();  // ขา buzzer LOW ก่อนเสียงแรก (ต้นแบบ)
   analogWriteResolution(12);
   analogWriteFreq(20000);
   delay(1000);
@@ -92,12 +93,10 @@ void RobotSetup() {
   }
 
   myIMU.enableRotationVector(5);  //
-  resetYaw();
+  bool gyroOk = resetYaw();  // ล้มเหลว → resetYaw() บี๊บ 500 ms ให้แล้ว
 
   delay(500);
-  Beep2(100, 100);
-  delay(50);
-  Beep2(200, 100);
+  if (gyroOk) SoundGyroReady();  // ไจโรตั้งศูนย์สำเร็จ (GyroReset ต้นแบบ)
 }
 
 
@@ -151,12 +150,17 @@ int START_PUSH() {
   return 1;
 }
 
+// รอกด START (debounce 30 ms) และรอปล่อย แล้วปี๊บ 200 ms (ต้นแบบ)
 void swSTART() {
   while (1) {
     if (digitalRead(START_PIN) == PRESS) {
-      break;
+      delay(30);
+      if (digitalRead(START_PIN) == PRESS) break;
     }
   }
+  while (digitalRead(START_PIN) == PRESS)
+    ;
+  delay(30);
   Beep(200);
 }
 
@@ -268,8 +272,13 @@ void CalibrateSensor() {
       Serial.println(");");
   }
 
-  SaveCalibrateToEEPROM();
-  Serial.println("Saved calibration to EEPROM");
+  noTone(BUZZER_PIN);  // ไม่มีเสียงค้างตอนเขียน flash
+  if (SaveCalibrateToEEPROM()) {
+    Serial.println("Saved calibration to EEPROM");
+    SoundSuccess();  // 3500 Hz 250 ms × 2 เว้น 150 ms
+  } else {
+    Serial.println("Save calibration to EEPROM FAILED");
+  }
 
   while (digitalRead(START_PIN) == !PRESS)
     ;

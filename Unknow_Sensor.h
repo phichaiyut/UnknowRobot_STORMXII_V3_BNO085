@@ -19,6 +19,7 @@
 
 #include <Arduino.h>
 #include <EEPROM.h>
+#include "Unknow_Buzzer.h"
 
 
 // =====================================================================
@@ -342,7 +343,9 @@ void caribrateSensorF(int pauseTime, int samples) {
     minValueF[i] = 4095;
     maxValueF[i] = 0;
   }
+  unsigned long nextTone = millis();  // ติ๊ด 3000 Hz 50 ms ทุก 300 ms (ไม่บล็อก)
   for (int s = 0; s <= samples; s++) {
+    CalTick(nextTone);
     ReadF();
     for (int i = 0; i < NUM_SENSORS; i++) {
       if (F[i] < minValueF[i]) minValueF[i] = F[i];
@@ -350,6 +353,7 @@ void caribrateSensorF(int pauseTime, int samples) {
     }
     delay(pauseTime);
   }
+  noTone(BUZZER_PIN);  // ปิดเสียงสนิทหลังกวาดเสร็จ
   for (int i = 0; i < NUM_SENSORS; i++) {
     minValueF[i] += 60;
     maxValueF[i] -= 80;
@@ -361,7 +365,9 @@ void caribrateSensorC(int pauseTime, int samples) {
     minValueC[i] = 4095;
     maxValueC[i] = 0;
   }
+  unsigned long nextTone = millis();  // ติ๊ด 3000 Hz 50 ms ทุก 300 ms (ไม่บล็อก)
   for (int s = 0; s <= samples; s++) {
+    CalTick(nextTone);
     ReadC();
     for (int i = 0; i < 2; i++) {
       if (C[i] < minValueC[i]) minValueC[i] = C[i];
@@ -369,6 +375,7 @@ void caribrateSensorC(int pauseTime, int samples) {
     }
     delay(pauseTime);
   }
+  noTone(BUZZER_PIN);  // ปิดเสียงสนิทหลังกวาดเสร็จ
   for (int i = 0; i < 2; i++) {
     minValueC[i] += 60;
     maxValueC[i] -= 80;
@@ -380,7 +387,9 @@ void caribrateSensorB(int pauseTime, int samples) {
     minValueB[i] = 4095;
     maxValueB[i] = 0;
   }
+  unsigned long nextTone = millis();  // ติ๊ด 3000 Hz 50 ms ทุก 300 ms (ไม่บล็อก)
   for (int s = 0; s <= samples; s++) {
+    CalTick(nextTone);
     ReadB();
     for (int i = 0; i < NUM_SENSORS; i++) {
       if (B[i] < minValueB[i]) minValueB[i] = B[i];
@@ -388,6 +397,7 @@ void caribrateSensorB(int pauseTime, int samples) {
     }
     delay(pauseTime);
   }
+  noTone(BUZZER_PIN);  // ปิดเสียงสนิทหลังกวาดเสร็จ
   for (int i = 0; i < NUM_SENSORS; i++) {
     minValueB[i] += 60;
     maxValueB[i] -= 80;
@@ -413,7 +423,8 @@ struct SensorCalibData {
   int16_t maxValueC[2];
 };
 
-void SaveCalibrateToEEPROM() {
+// คืน true = บันทึกสำเร็จ (EEPROM.commit())
+bool SaveCalibrateToEEPROM() {
   EEPROM.begin(sizeof(SensorCalibData));
   SensorCalibData data;
   data.magic = EEPROM_CALIB_MAGIC;
@@ -424,7 +435,7 @@ void SaveCalibrateToEEPROM() {
   memcpy(data.minValueC, minValueC, sizeof(minValueC));
   memcpy(data.maxValueC, maxValueC, sizeof(maxValueC));
   EEPROM.put(EEPROM_CALIB_ADDR, data);
-  EEPROM.commit();
+  return EEPROM.commit();
 }
 
 bool LoadCalibrateFromEEPROM() {

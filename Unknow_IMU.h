@@ -1713,7 +1713,7 @@ void FFBG(int Speed, char select) {
   while (1) {
     RunG(LeftBaseSpeed, RightBaseSpeed);
     ReadCalibrateF();
-    if (F[5] > Ref || F[6] > Ref || F[7] > Ref || F[8] > Ref || F[9] > Ref || F[10] > Ref) break;
+    if (F[0] > Ref || F[1] > Ref || F[2] > Ref || F[3] > Ref || F[4] > Ref ||F[5] > Ref || F[6] > Ref || F[7] > Ref || F[8] > Ref || F[9] > Ref || F[10] > Ref || F[11] > Ref || F[12] > Ref || F[13] > Ref || F[14] > Ref || F[15] > Ref) break;
   }
   TrackSelectG(Speed, select);
 }
@@ -1724,7 +1724,7 @@ void BBBG(int Speed, char select) {
   while (1) {
     RunGB(BackLeftBaseSpeed, BackRightBaseSpeed);
     ReadCalibrateB();
-    if (B[5] > Ref || B[6] > Ref || B[7] > Ref || B[8] > Ref || B[9] > Ref || B[10] > Ref) break;
+    if (B[0] > Ref || B[1] > Ref || B[2] > Ref || B[3] > Ref || B[4] > Ref || B[5] > Ref || B[6] > Ref || B[7] > Ref || B[8] > Ref || B[9] > Ref || B[10] > Ref || B[11] > Ref || B[12] > Ref || B[13] > Ref || B[14] > Ref || B[15] > Ref) break;
   }
   TrackSelectGB(Speed, select);
 }

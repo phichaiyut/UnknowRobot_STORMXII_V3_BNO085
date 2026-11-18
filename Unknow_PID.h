@@ -1483,7 +1483,7 @@ void FFC(int Speed, float Kp, float Kd, char select) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
     ReadCalibrateF();
-    if ((F[5] >= Ref && F[10] >= Ref) || (F[4] >= Ref && F[11] >= Ref) || (F[3] >= Ref && F[12] >= Ref) || (F[5] >= Ref && F[6] >= Ref && F[9] >= Ref && F[10] >= Ref)) break;
+    if (F[0] >= Ref && F[15] >= Ref) break;
   }
   TrackSelectF(Speed, select);
 }
@@ -1504,7 +1504,7 @@ void BBC(int Speed, float Kp, float Kd, char select) {
   while (1) {
     PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
     ReadCalibrateB();
-    if ((B[5] >= Ref && B[10] >= Ref) || (B[4] >= Ref && B[11] >= Ref) || (B[3] >= Ref && B[12] >= Ref) || (B[5] >= Ref && B[6] >= Ref && B[9] >= Ref && B[10] >= Ref)) break;
+    if (B[0] >= Ref && B[15] >= Ref) break;
   }
   TrackSelectB(Speed, select);
 }
@@ -1567,7 +1567,7 @@ void FFL(int Speed, float Kp, float Kd, char select) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
     ReadCalibrateF();
-    if ((F[1] > Ref && F[5] > Ref) || (F[2] > Ref && F[6] > Ref) || (F[3] > Ref && F[7] > Ref)) break;
+    if (F[0] > Ref ) break;
   }
   TrackSelectF(Speed, select);
 }
@@ -1588,7 +1588,7 @@ void BBL(int Speed, float Kp, float Kd, char select) {
   while (1) {
     PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
     ReadCalibrateB();
-    if ((B[1] > Ref && B[5] > Ref) || (B[2] > Ref && B[6] > Ref) || (B[3] > Ref && B[7] > Ref)) break;
+    if (B[0] > Ref ) break;
   }
   TrackSelectB(Speed, select);
 }
@@ -1609,7 +1609,7 @@ void FFR(int Speed, float Kp, float Kd, char select) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
     ReadCalibrateF();
-    if ((F[14] > Ref && F[10] > Ref) || (F[13] > Ref && F[9] > Ref) || (F[12] > Ref && F[8] > Ref)) break;
+    if (F[15] > Ref ) break;
   }
   TrackSelectF(Speed, select);
 }
@@ -1630,7 +1630,7 @@ void BBR(int Speed, float Kp, float Kd, char select) {
   while (1) {
     PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
     ReadCalibrateB();
-    if ((B[14] > Ref && B[10] > Ref) || (B[13] > Ref && B[9] > Ref) || (B[12] > Ref && B[8] > Ref)) break;
+    if (B[15] > Ref ) break;
   }
   TrackSelectB(Speed, select);
 }
@@ -1822,7 +1822,7 @@ void FFBlack(int SpeedL, int SpeedR, char select) {
   while (1) {
     Motor(SpeedL, SpeedR);
     ReadCalibrateF();
-    if (F[5] > Ref || F[6] > Ref || F[7] > Ref || F[8] > Ref || F[9] > Ref || F[10] > Ref) break;
+    if (F[0] > Ref || F[1] > Ref || F[2] > Ref || F[3] > Ref || F[4] > Ref || F[5] > Ref || F[6] > Ref || F[7] > Ref || F[8] > Ref || F[9] > Ref || F[10] > Ref || F[11] > Ref || F[12] > Ref || F[13] > Ref || F[14] > Ref || F[15] > Ref) break;
   }
   TrackSelectF(SpeedL, select);
 }
@@ -1838,7 +1838,7 @@ void BBBlack(int SpeedL, int SpeedR, char select) {
   while (1) {
     Motor(-SpeedL, -SpeedR);
     ReadCalibrateB();
-    if (B[5] > Ref || B[6] > Ref || B[7] > Ref || B[8] > Ref || B[9] > Ref || B[10] > Ref) break;
+    if (B[0] > Ref || B[1] > Ref || B[2] > Ref || B[3] > Ref || B[4] > Ref || B[5] > Ref || B[6] > Ref || B[7] > Ref || B[8] > Ref || B[9] > Ref || B[10] > Ref || B[11] > Ref || B[12] > Ref || B[13] > Ref || B[14] > Ref || B[15] > Ref) break;
   }
   TrackSelectB(SpeedL, select);
 }
@@ -1857,7 +1857,7 @@ void FFWhite(int Speed, float Kp, float Kd, char select) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
     ReadCalibrateF();
-    if (F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref && F[7] < Ref && F[8] < Ref && F[9] < Ref && F[10] < Ref && F[11] < Ref && F[12] < Ref) break;
+    if (F[0] < Ref && F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref && F[7] < Ref && F[8] < Ref && F[9] < Ref && F[10] < Ref && F[11] < Ref && F[12] < Ref && F[13] < Ref && F[14] < Ref && F[15] < Ref) break;
   }
   TrackSelectF(Speed, select);
 }
@@ -1878,7 +1878,7 @@ void BBWhite(int Speed, float Kp, float Kd, char select) {
   while (1) {
     PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
     ReadCalibrateB();
-    if (B[3] < Ref && B[4] < Ref && B[5] < Ref && B[6] < Ref && B[7] < Ref && B[8] < Ref && B[9] < Ref && B[10] < Ref && B[11] < Ref && B[12] < Ref) break;
+    if (B[0] < Ref && B[1] < Ref && B[2] < Ref && B[3] < Ref && B[4] < Ref && B[5] < Ref && B[6] < Ref && B[7] < Ref && B[8] < Ref && B[9] < Ref && B[10] < Ref && B[11] < Ref && B[12] < Ref && B[13] < Ref && B[14] < Ref && B[15] < Ref) break;
   }
   TrackSelectB(Speed, select);
 }
